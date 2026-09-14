@@ -1,0 +1,26 @@
+{
+  "name": "myworldoffamily",
+  "version": "1.0.0",
+  "description": "面向小学低年级学生的 HTML5 + Three.js 3D 沙盒教育游戏 - 我的世界家族版",
+  "main": "minecraft-3d.html",
+  "scripts": {
+    "start": "bash serve.sh",
+    "dev": "npx serve -p 8080",
+    "serve": "python3 -m http.server 8080 --bind 127.0.0.1"
+  },
+  "keywords": [
+    "minecraft",
+    "minecraft-web",
+    "threejs",
+    "3d-game",
+    "education",
+    "kids",
+    "sandbox",
+    "html5",
+    "family",
+    "family-games"
+  ],
+  "author": "Kingrenqt",
+  "license": "MIT",
+  "private": true
+}

@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的世界 (Wǒ de Shì Jiè) - Minecraft HTML5 网页版</title>
+    <link rel="stylesheet" href="minecraft-3d.css">
+    
+    <!-- 角色面板 -->
+    <div id="character-panel-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:1000;overflow-y:auto;padding:20px;">
+        <div style="max-width:900px;margin:0 auto;">
+            <h2 style="color:#ffd700;text-align:center;margin-bottom:20px;">📋 <ruby>角色面板<rt>Jiǎo Sè Miàn Bǎn</rt></ruby> - <ruby>怪物图鉴<rt>Guài Wù Tú Jiàn</rt></ruby></h2>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:15px;">
+                <div class="mob-card" data-type="CREEPER">
+                    <div class="mob-header" style="background:#55aa44;">
+                        <span class="mob-name">💥 苦力怕</span>
+                        <span class="mob-pinyin">kǔ lì pà</span>
+                    </div>
+                    <div class="mob-body">
+                        <p>📊 <ruby>血量<rt>Xuè Liàng</rt></ruby>: 8 | ⚔️ <ruby>伤害<rt>Shāng Hài</rt></ruby>: 3</p>
+                        <p>🏃 <ruby>速度<rt>Sù Dù</rt></ruby>: 1.5</p>
+                        <p style="color:#ff8888;margin-top:8px;"><b>🌙 <ruby>夜间技能<rt>Yè Jiān Jì Néng</rt></ruby>: <ruby>自爆<rt>Zì Bào</rt></ruby></b></p>
+                        <p style="color:#aaa;font-size:12px;"><ruby>靠近玩家时自爆<rt>Zì Bào</rt></ruby><ruby>造成范围伤害<rt>Shāng Hài</rt></ruby></p>
+                    </div>
+                </div>
+                <div class="mob-card" data-type="ZOMBIE">
+                    <div class="mob-header" style="background:#4a6b4a;">
+                        <span class="mob-name">💚 僵尸</span>
+                        <span class="mob-pinyin">jiāng shī</span>
+                    </div>
+                    <div class="mob-body">
+                        <p>📊 <ruby>血量<rt>Xuè Liàng</rt></ruby>: 10 | ⚔️ <ruby>伤害<rt>Shāng Hài</rt></ruby>: 2</p>
+                        <p>🏃 <ruby>速度<rt>Sù Dù</rt></ruby>: 1.2</p>
+                        <p style="color:#ff8888;margin-top:8px;"><b>🌙 <ruby>夜间技能<rt>Yè Jiān Jì Néng</rt></ruby>: <ruby>群体治疗<rt>Qūn Tǐ Zhì Liáo</rt></ruby></b></p>
+                        <p style="color:#aaa;font-size:12px;">治疗附近的僵尸</p>
+                    </div>
+                </div>
+                <div class="mob-card" data-type="PIG">
+                    <div class="mob-header" style="background:#ffb6c1;">
+                        <span class="mob-name">🐷 猪</span>
+                        <span class="mob-pinyin">zhū</span>
+                    </div>
+                    <div class="mob-body">
+                        <p>📊 <ruby>血量<rt>Xuè Liàng</rt></ruby>: 10 | ⚔️ <ruby>伤害<rt>Shāng Hài</rt></ruby>: 0</p>
+                        <p>🏃 <ruby>速度<rt>Sù Dù</rt></ruby>: 0.8</p>
+                        <p style="color:#ff8888;margin-top:8px;"><b>🌙 <ruby>夜间技能<rt>Yè Jiān Jì Néng</rt></ruby>: <ruby>恐慌逃跑<rt>Kōng Huǎng Táo Pǎo</rt></ruby></b></p>
+                        <p style="color:#aaa;font-size:12px;">夜晚加速逃跑</p>
+                    </div>
+                </div>
+                <div class="mob-card" data-type="SKELETON">
+                    <div class="mob-header" style="background:#eeeeee;">
+                        <span class="mob-name">🏹 骷髅</span>
+                        <span class="mob-pinyin">kū lóu</span>
+                    </div>
+                    <div class="mob-body">
+                        <p>📊 <ruby>血量<rt>Xuè Liàng</rt></ruby>: 8 | ⚔️ <ruby>伤害<rt>Shāng Hài</rt></ruby>: 2</p>
+                        <p>🏃 <ruby>速度<rt>Sù Dù</rt></ruby>: 1.0</p>
+                        <p style="color:#ff8888;margin-top:8px;"><b>🌙 <ruby>夜间技能<rt>Yè Jiān Jì Néng</rt></ruby>: <ruby>远程射击<rt>Yuǎn Chéng Shè Jí</rt></ruby></b></p>
+                        <p style="color:#aaa;font-size:12px;">发射箭矢远程攻击</p>
+                    </div>
+                </div>
+                <div class="mob-card" data-type="SPIDER">
+                    <div class="mob-header" style="background:#222222;">
+                        <span class="mob-name">🕷️ 蜘蛛</span>
+                        <span class="mob-pinyin">zhī zhū</span>
+                    </div>
+                    <div class="mob-body">
+                        <p>📊 <ruby>血量<rt>Xuè Liàng</rt></ruby>: 12 | ⚔️ <ruby>伤害<rt>Shāng Hài</rt></ruby>: 3</p>
+                        <p>🏃 <ruby>速度<rt>Sù Dù</rt></ruby>: 2.0</p>
+                        <p style="color:#ff8888;margin-top:8px;"><b>🌙 <ruby>夜间技能<rt>Yè Jiān Jì Néng</rt></ruby>: <ruby>爬墙<rt>Pá Qiáng</rt></ruby></b></p>
+                        <p style="color:#aaa;font-size:12px;"><ruby>可以攀爬墙<rt>Pá Qiáng</rt></ruby>壁和天花板</p>
+                    </div>
+                </div>
+                <div class="mob-card" data-type="ENDERMAN">
+                    <div class="mob-header" style="background:#6600cc;">
+                        <span class="mob-name">✨ 末影人</span>
+                        <span class="mob-pinyin">mò yǐng rén</span>
+                    </div>
+                    <div class="mob-body">
+                        <p>📊 <ruby>血量<rt>Xuè Liàng</rt></ruby>: 20 | ⚔️ <ruby>伤害<rt>Shāng Hài</rt></ruby>: 5</p>
+                        <p>🏃 <ruby>速度<rt>Sù Dù</rt></ruby>: 1.5</p>
+                        <p style="color:#ff8888;margin-top:8px;"><b>🌙 <ruby>夜间技能<rt>Yè Jiān Jì Néng</rt></ruby>: <ruby>瞬移<rt>Shùn Yí</rt></ruby></b></p>
+                        <p style="color:#aaa;font-size:12px;"><ruby>瞬移<rt>Shùn Yí</rt></ruby>到玩家身后攻击</p>
+                    </div>
+                </div>
+                <div class="mob-card" data-type="WOLF">
+                    <div class="mob-header" style="background:#888888;">
+                        <span class="mob-name">⚡ 狼</span>
+                        <span class="mob-pinyin">láng</span>
+                    </div>
+                    <div class="mob-body">
+                        <p>📊 <ruby>血量<rt>Xuè Liàng</rt></ruby>: 8 | ⚔️ <ruby>伤害<rt>Shāng Hài</rt></ruby>: 4</p>
+                        <p>🏃 <ruby>速度<rt>Sù Dù</rt></ruby>: 1.5</p>
+                        <p style="color:#ff8888;margin-top:8px;"><b>🌙 <ruby>夜间技能<rt>Yè Jiān Jì Néng</rt></ruby>: <ruby>极速追击<rt>Jí Sù Zhuī Jí</rt></ruby></b></p>
+                        <p style="color:#aaa;font-size:12px;"><ruby>速度<rt>Sù Dù</rt></ruby>翻倍追击猎物</p>
+                    </div>
+                </div>
+                <div class="mob-card" data-type="COW">
+                    <div class="mob-header" style="background:#664422;">
+                        <span class="mob-name">🐮 牛</span>
+                        <span class="mob-pinyin">niú</span>
+                    </div>
+                    <div class="mob-body">
+                        <p>📊 <ruby>血量<rt>Xuè Liàng</rt></ruby>: 10 | ⚔️ <ruby>伤害<rt>Shāng Hài</rt></ruby>: 0</p>
+                        <p>🏃 <ruby>速度<rt>Sù Dù</rt></ruby>: 0.6</p>
+                        <p style="color:#ff8888;margin-top:8px;"><b>🌙 <ruby>夜间技能<rt>Yè Jiān Jì Néng</rt></ruby>: <ruby>牛吼<rt>Niú Hǒu</rt></ruby></b></p>
+                        <p style="color:#aaa;font-size:12px;">吼叫吓退附近的怪物</p>
+                    </div>
+                </div>
+                <div class="mob-card" data-type="SHEEP">
+                    <div class="mob-header" style="background:#eeeeee;">
+                        <span class="mob-name">🐑 羊</span>
+                        <span class="mob-pinyin">yáng</span>
+                    </div>
+                    <div class="mob-body">
+                        <p>📊 <ruby>血量<rt>Xuè Liàng</rt></ruby>: 8 | ⚔️ <ruby>伤害<rt>Shāng Hài</rt></ruby>: 0</p>
+                        <p>🏃 <ruby>速度<rt>Sù Dù</rt></ruby>: 0.7</p>
+                        <p style="color:#ff8888;margin-top:8px;"><b>🌙 <ruby>夜间技能<rt>Yè Jiān Jì Néng</rt></ruby>: <ruby>快速逃跑<rt>Kuài Sù Táo Pǎo</rt></ruby></b></p>
+                        <p style="color:#aaa;font-size:12px;"><ruby>看到怪物时快速逃跑<rt>Kuài Sù Táo Pǎo</rt></ruby></p>
+                    </div>
+                </div>
+                <div class="mob-card" data-type="CHICKEN">
+                    <div class="mob-header" style="background:#eeeeee;">
+                        <span class="mob-name">🐔 鸡</span>
+                        <span class="mob-pinyin">jī</span>
+                    </div>
+                    <div class="mob-body">
+                        <p>📊 <ruby>血量<rt>Xuè Liàng</rt></ruby>: 4 | ⚔️ <ruby>伤害<rt>Shāng Hài</rt></ruby>: 0</p>
+                        <p>🏃 <ruby>速度<rt>Sù Dù</rt></ruby>: 1.0</p>
+                        <p style="color:#ff8888;margin-top:8px;"><b>🌙 <ruby>夜间技能<rt>Yè Jiān Jì Néng</rt></ruby>: <ruby>夜间飞行<rt>Yè Jiān Fēi Xíng</rt></ruby></b></p>
+                        <p style="color:#aaa;font-size:12px;">夜晚可以短暂飞行</p>
+                    </div>
+                </div>
+                <div class="mob-card" data-type="BAT">
+                    <div class="mob-header" style="background:#444444;">
+                        <span class="mob-name">🦇 蝙蝠</span>
+                        <span class="mob-pinyin">biān fú</span>
+                    </div>
+                    <div class="mob-body">
+                        <p>📊 <ruby>血量<rt>Xuè Liàng</rt></ruby>: 6 | ⚔️ <ruby>伤害<rt>Shāng Hài</rt></ruby>: 1</p>
+                        <p>🏃 <ruby>速度<rt>Sù Dù</rt></ruby>: 1.2</p>
+                        <p style="color:#ff8888;margin-top:8px;"><b>🌙 <ruby>夜间技能<rt>Yè Jiān Jì Néng</rt></ruby>: <ruby>声呐定位<rt>Shēng Nà Dìng Wèi</rt></ruby></b></p>
+                        <p style="color:#aaa;font-size:12px;">用声波探测周围环境</p>
+                    </div>
+                </div>
+                <div class="mob-card" data-type="GRANDMA">
+                    <div class="mob-header" style="background:#ffcc66;">
+                        <span class="mob-name">🙏 奶奶</span>
+                        <span class="mob-pinyin">nǎi nai</span>
+                    </div>
+                    <div class="mob-body">
+                        <p>📊 <ruby>血量<rt>Xuè Liàng</rt></ruby>: 50 | ⚔️ <ruby>伤害<rt>Shāng Hài</rt></ruby>: 0</p>
+                        <p>🏃 <ruby>速度<rt>Sù Dù</rt></ruby>: 0.5</p>
+                        <p style="color:#ff8888;margin-top:8px;"><b>🌙 <ruby>夜间技能<rt>Yè Jiān Jì Néng</rt></ruby>: <ruby>祝福<rt>Zhù Fú</rt></ruby></b></p>
+                        <p style="color:#aaa;font-size:12px;">夜晚保护附近玩家不受攻击</p>
+                    </div>
+                </div>
+                <div class="mob-card" data-type="GRANDPA">
+                    <div class="mob-header" style="background:#88aaff;">
+                        <span class="mob-name">🛡️ 爷爷</span>
+                        <span class="mob-pinyin">yé ye</span>
+                    </div>
+                    <div class="mob-body">
+                        <p>📊 <ruby>血量<rt>Xuè Liàng</rt></ruby>: 50 | ⚔️ <ruby>伤害<rt>Shāng Hài</rt></ruby>: 0</p>
+                        <p>🏃 <ruby>速度<rt>Sù Dù</rt></ruby>: 0.5</p>
+                        <p style="color:#ff8888;margin-top:8px;"><b>🌙 <ruby>夜间技能<rt>Yè Jiān Jì Néng</rt></ruby>: <ruby>护盾<rt>Hù Dùn</rt></ruby></b></p>
+                        <p style="color:#aaa;font-size:12px;"><ruby>夜晚为附近玩家生成护盾<rt>Hù Dùn</rt></ruby></p>
+                    </div>
+                </div>
+            </div>
+            <p style="text-align:center;color:#aaa;margin-top:20px;">按 ESC <ruby>或点击关闭<rt>Guān Bì</rt></ruby></p>
+            <button id="close-character-panel" style="display:block;margin:20px auto;padding:10px 30px;background:#ffd700;border:none;border-radius:5px;font-size:16px;cursor:pointer;"><ruby>关闭面板<rt>Guān Bì Miàn Bǎn</rt></ruby></button>
+        </div>
+    </div>
+    
+    <!-- 玩家属性面板 -->
+    <div id="player-stats-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:1000;overflow-y:auto;padding:20px;">
+        <div style="max-width:600px;margin:0 auto;">
+            <h2 style="color:#ffd700;text-align:center;margin-bottom:20px;">📊 <ruby>玩家属性<rt>Wán Jiā Shǔ Xìng</rt></ruby> - <ruby>浩宇<rt>Hào Yǔ</rt></ruby></h2>
+            <div id="player-stats-content" style="background:#333;border:2px solid #555;border-radius:8px;padding:20px;color:#fff;">
+                <!-- 生命/饥饿 -->
+                <div style="margin-bottom:20px;">
+                    <h3 style="color:#ff5;margin:0 0 10px;">❤️ <ruby>生命<rt>Shēng Mìng</rt></ruby> & 🍖 <ruby>饥饿<rt>Jī È</rt></ruby></h3>
+                    <div style="display:flex;gap:20px;align-items:center;">
+                        <div style="flex:1;">
+                            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                                <span>❤️ <ruby>生命<rt>Shēng Mìng</rt></ruby></span>
+                                <span id="stats-health-text">120/120</span>
+                            </div>
+                            <div style="height:20px;background:#222;border-radius:10px;overflow:hidden;">
+                                <div id="stats-health-bar" style="height:100%;background:linear-gradient(90deg,#ff4444,#ff6666);width:100%;transition:width 0.3s;"></div>
+                            </div>
+                        </div>
+                        <div style="flex:1;">
+                            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                                <span>🍖 <ruby>饥饿<rt>Jī È</rt></ruby></span>
+                                <span id="stats-hunger-text">120/120</span>
+                            </div>
+                            <div style="height:20px;background:#222;border-radius:10px;overflow:hidden;">
+                                <div id="stats-hunger-bar" style="height:100%;background:linear-gradient(90deg,#cc8800,#ffaa00);width:100%;transition:width 0.3s;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 🎓 学习等级（XP系统） -->
+                <div style="margin-bottom:20px;">
+                    <h3 style="color:#ffd700;margin:0 0 10px;">🎓 <ruby>学习等级<rt> Xué Xí Deng Jí</rt></ruby></h3>
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+                        <div style="font-size:36px;">⭐</div>
+                        <div style="flex:1;">
+                            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                                <span style="color:#ffd700;font-weight:bold;">LV.<span id="xp-level">1</span></span>
+                                <span style="color:#aaa;font-size:12px;"><span id="xp-current">0</span> / <span id="xp-next">100</span> XP</span>
+                            </div>
+                            <div style="height:16px;background:#222;border-radius:8px;overflow:hidden;border:1px solid #444;">
+                                <div id="xp-bar" style="height:100%;background:linear-gradient(90deg,#ffd700,#ffaa00);width:0%;transition:width 0.5s ease;border-radius:8px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:10px;font-size:12px;color:#aaa;margin-top:6px;">
+                        <span>📖 语文: <b id="xp-yw-count" style="color:#88ff88;">0</b></span>
+                        <span>🔢 数学: <b id="xp-sx-count" style="color:#88aaff;">0</b></span>
+                        <span>🔤 英语: <b id="xp-yy-count" style="color:#ffaa88;">0</b></span>
+                    </div>
+                    <div style="font-size:11px;color:#666;margin-top:4px;">完成关卡/朗读课文/答题 均可获得 XP！</div>
+                </div>
+                
+                <!-- 装备 -->
+                <div style="margin-bottom:20px;">
+                    <h3 style="color:#ff5;margin:0 0 10px;">⚔️ <ruby>装备<rt>Zhuāng Bèi</rt></ruby></h3>
+                    <div id="stats-equipment" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
+                        <!-- 动态生成 -->
+                    </div>
+                </div>
+                
+                <!-- 物品栏 -->
+                <div style="margin-bottom:20px;">
+                    <h3 style="color:#ff5;margin:0 0 10px;">📦 <ruby>物品栏<rt>Wù Pǐn Lán</rt></ruby></h3>
+                    <div id="stats-inventory" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;font-size:13px;">
+                        <!-- 动态生成 -->
+                    </div>
+                </div>
+                
+                <!-- 仓库（武器和工具） -->
+                <div style="margin-bottom:20px;">
+                    <h3 style="color:#ff5;margin:0 0 10px;">🏆 <ruby>仓库<rt>Cāng Kù</rt></ruby> - <ruby>武器与工具<rt>Wǔ Qì Yǔ Gōng Jù</rt></ruby></h3>
+                    <div id="stats-warehouse" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:13px;">
+                        <!-- 动态生成 -->
+                    </div>
+                </div>
+                
+                <!-- 当前选中 -->
+                <div style="margin-bottom:20px;">
+                    <h3 style="color:#ff5;margin:0 0 10px;">🎯 <ruby>当前选中<rt>Dāng Qián Xuǎn Zhōng</rt></ruby></h3>
+                    <div id="stats-current" style="background:#222;padding:10px;border-radius:4px;font-size:14px;"></div>
+                </div>
+                
+                <!-- 状态 -->
+                <div>
+                    <h3 style="color:#ff5;margin:0 0 10px;">🌍 <ruby>状态<rt>Zhuàng Tài</rt></ruby></h3>
+                    <div id="stats-status" style="font-size:13px;color:#aaa;line-height:1.8;"></div>
+                </div>
+            </div>
+            <p style="text-align:center;color:#aaa;margin-top:20px;">按 P 或 ESC <ruby>关闭<rt>Guān Bì</rt></ruby></p>
+            <button id="close-player-stats" style="display:block;margin:20px auto;padding:10px 30px;background:#ffd700;border:none;border-radius:5px;font-size:16px;cursor:pointer;"><ruby>关闭面板<rt>Guān Bì Miàn Bǎn</rt></ruby></button>
+        </div>
+    </div>
+    
+    
+
+    <!-- Three.js 与第一人称控制器 -->
+    <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
+</head>
+<body>
+    <!-- 全屏加载遮罩 -->
+    <div id="full-screen-loader" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#1a1a2e;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:99999;color:#fff;font-family:'Segoe UI',sans-serif;">
+        <div style="font-size:72px;margin-bottom:20px;animation:spin 1s linear infinite;">⚙️</div>
+        <h1 style="color:#ff5;margin:0 0 15px;font-size:28px;"><ruby>我的世界<rt>Wǒ de Shì Jiè</rt></ruby> (Minecraft Web)</h1>
+        <p style="color:#ff5;margin:10px 0;font-size:18px;"><ruby>加载中<rt>Zài Jiā Zài Zhōng</rt></ruby>... <ruby>请稍候<rt>Qǐng Shāo Hòu</rt></ruby></p>
+        <p id="loading-status" style="font-size:14px;color:#aaa;"><ruby>正在初始化<rt>Zhèng Zài Chū Shǐ Huà</rt></ruby>...</p>
+        <div style="margin-top:30px;width:300px;height:8px;background:#333;border-radius:4px;overflow:hidden;">
+            <div id="loading-bar" style="width:0%;height:100%;background:linear-gradient(90deg,#ff5,#ff0);transition:width 0.3s;"></div>
+        </div>
+        <p id="loading-percent" style="font-size:16px;color:#ff5;margin-top:10px;font-weight:bold;">0%</p>
+    </div>
+    <div id="game-container">
+        <!-- 掉血红色闪屏层 -->
+        <div id="damage-flash" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9998;opacity:0;transition:opacity 0.3s ease-out;background:radial-gradient(ellipse at center,rgba(255,0,0,0) 30%,rgba(255,0,0,0.5) 100%);"></div>
+        <!-- 画面准星 -->
+        <div id="crosshair"></div>
+
+        <!-- 游戏状态与坐标调试信息 -->
+        <div id="info-panel">
+            FPS: <span id="fps-val">0</span><br>
+            <ruby>位置<rt>Wèi Zhì</rt></ruby>: <span id="pos-val">X: 0, Y: 0, Z: 0</span><br>
+            <ruby>场景<rt>Chǎng Jǐng</rt></ruby>: <span id="biome-val"><ruby>平原<rt>Píng Yuán</rt></ruby></span><br>
+            <ruby>当前方块<rt>Dāng Qián Fāng Kuài</rt></ruby>: <span id="block-val"><ruby>草地<rt>Cǎo Dì</rt></ruby></span><br>
+            <ruby>状态<rt>Zhuàng Tài</rt></ruby>: <span id="status-val"><ruby>未开始<rt>Wèi Kāi Shǐ</rt></ruby></span><br>
+            <span id="textbook-status" style="color:#88ff88;font-size:11px;"></span>
+        </div>
+
+        <!-- 右上角小地图 -->
+        <div id="mini-map-container" style="position:fixed;top:10px;right:10px;width:240px;height:200px;background:rgba(20,20,30,0.95);border:2px solid #555;border-radius:8px;z-index:100;overflow:hidden;pointer-events:none;">
+            <canvas id="mini-map-canvas" width="176" height="176" style="width:176px;height:176px;float:left;"></canvas>
+            <div id="mini-map-info" style="float:left;width:56px;height:176px;background:rgba(10,10,20,0.9);border-left:1px solid #444;padding:3px;font-size:9px;color:#ccc;line-height:1.3;overflow:hidden;">
+                <div style="color:#ffd700;font-size:10px;margin-bottom:2px;text-align:center;">📊 <ruby>信息<rt>Xìn Xī</rt></ruby></div>
+                <div id="mini-map-pos" style="font-size:8px;color:#0f0;margin-bottom:2px;"></div>
+                <div id="mini-map-mobs" style="font-size:8px;"></div>
+                <div id="mini-map-ores" style="margin-top:2px;border-top:1px solid #333;padding-top:2px;font-size:8px;"></div>
+            </div>
+            <div style="position:absolute;top:4px;left:6px;font-size:10px;color:#ff5;font-weight:bold;">🗺️ <ruby>小地图<rt>Xiǎo Dì Tú</rt></ruby></div>
+        </div>
+
+        <!-- 兜底模式提示 -->
+        <div id="fallback-hint"></div>
+
+
+        <!-- 进游戏时的操作提示 -->
+        <div id="in-game-prompt"></div>
+        <!-- 物品快捷栏 -->
+        <div id="hotbar-container"></div>
+
+        <!-- 功能按钮面板 -->
+        <div id="btn-panel">
+            <button class="game-btn" id="btn-save-panel" title="<ruby>存档管理<rt>Cún Dàng Guǎn Lǐ</rt></ruby>">
+                <span class="btn-icon">💾</span>
+                <span class="btn-text"><ruby>存档<rt>Cún Dàng</rt></ruby></span>
+            </button>
+            <button class="game-btn" id="btn-player" title="<ruby>玩家属性<rt>Wán Jiā Shǔ Xìng</rt></ruby> (P)">
+                <span class="btn-icon">📊</span>
+                <span class="btn-text"><ruby>属性<rt>Shǔ Xìng</rt></ruby></span>
+            </button>
+            <button class="game-btn" id="btn-teleport" title="<ruby>城市传送<rt>Chéng Shì Chuán Sòng</rt></ruby> (M)">
+                <span class="btn-icon">🗺️</span>
+                <span class="btn-text"><ruby>传送<rt>Chuán Sòng</rt></ruby></span>
+            </button>
+            <button class="game-btn" id="btn-map" title="<ruby>世界地图<rt>Shì Jiè Dì Tú</rt></ruby> (N)">
+                <span class="btn-icon">🗺️</span>
+                <span class="btn-text"><ruby>地图<rt>Dì Tú</rt></ruby></span>
+            </button>
+            <button class="game-btn" id="btn-level" title="<ruby>教材关卡<rt>Jiào Cái Guān Kǎ</rt></ruby> (L)">
+                <span class="btn-icon">📚</span>
+                <span class="btn-text"><ruby>关卡<rt>Guān Kǎ</rt></ruby></span>
+            </button>
+            <button class="game-btn" id="btn-reading" title="<ruby>课文朗读<rt>Kè Wén Lǎng Dú</rt></ruby> (R)">
+                <span class="btn-icon">📖</span>
+                <span class="btn-text"><ruby>朗读<rt>Lǎng Dú</rt></ruby></span>
+            </button>
+            <button class="game-btn" id="btn-voice" title="<ruby>切换语音<rt>Qiě Huàn Yǔ Yīn</rt></ruby> (V)">
+                <span class="btn-icon">🔊</span>
+                <span class="btn-text"><ruby>语音<rt>Yǔ Yīn</rt></ruby></span>
+            </button>
+        </div>
+
+        <!-- 生命 shēng mìng / 饥饿值 jī è zhí -->
+        <div id="vitals-panel">
+            <div class="vital-bar-wrap">
+                <span class="vital-icon">❤️</span>
+                <div class="vital-bar-bg"><div class="vital-bar-fill health-fill" id="health-bar" style="width:100%"></div></div>
+                <span class="vital-num" id="health-num">120</span>
+            </div>
+            <div class="vital-bar-wrap">
+                <span class="vital-icon">🍗</span>
+                <div class="vital-bar-bg"><div class="vital-bar-fill hunger-fill" id="hunger-bar" style="width:100%"></div></div>
+                <span class="vital-num" id="hunger-num">120</span>
+            </div>
+        </div>
+
+        <!-- 合成界面 -->
+        <div id="crafting-overlay">
+            <div id="crafting-panel">
+                <h2><small style="color:#aaa;font-size:14px">gōng zuò tái hé chéng</small><br><ruby>工作台<rt>Gōng Zuò Tái</rt></ruby> <ruby>合成<rt>Hé Chéng</rt></ruby></h2>
+                <div class="crafting-layout">
+                    <div class="crafting-left">
+                        <div class="crafting-area">
+                            <div class="craft-grid" id="craft-grid">
+                                <div class="craft-slot" data-slot="0"></div>
+                                <div class="craft-slot" data-slot="1"></div>
+                                <div class="craft-slot" data-slot="2"></div>
+                                <div class="craft-slot" data-slot="3"></div>
+                                <div class="craft-slot" data-slot="4"></div>
+                                <div class="craft-slot" data-slot="5"></div>
+                                <div class="craft-slot" data-slot="6"></div>
+                                <div class="craft-slot" data-slot="7"></div>
+                                <div class="craft-slot" data-slot="8"></div>
+                            </div>
+                            <div class="craft-arrow">→</div>
+                            <div class="craft-output" id="craft-output" title="点击合成"></div>
+                        </div>
+                        <div class="batch-craft">
+                            <label><ruby>批量合成<rt>Pī Liàng Hé Chéng</rt></ruby>：</label>
+                            <select id="batch-count">
+                                <option value="1">×1</option>
+                                <option value="2">×2</option>
+                                <option value="4">×4</option>
+                                <option value="8">×8</option>
+                                <option value="16">×16</option>
+                            </select>
+                            <button id="btn-craft-one">合成1个 (Hé Chéng 1 Gè)</button>
+                            <button id="btn-craft-max" class="max-btn"><ruby>最大合成<rt>Zuì Dà Hé Chéng</rt></ruby></button>
+                            <button id="btn-craft-deconstruct" style="background:linear-gradient(135deg,#cc4444,#993333);margin-left:8px">🔄 分解1个 (Fēn Jiě 1 Gè)</button>
+                            <button id="btn-craft-deconstruct-max" style="background:linear-gradient(135deg,#cc4444,#993333);margin-left:4px">🔄 <ruby>全部分解<rt>Quán Bù Fēn Jiě</rt></ruby></button>
+                        </div>
+                        <div class="materials-bar" id="materials-bar"></div>
+                        <div class="recipe-hints" id="recipe-hints"></div>
+                    </div>
+                    <div class="crafting-right">
+                        <div class="recipe-list-container" id="recipe-list-container">
+                            <h3>📖 <ruby>合成配方一览<rt>Hé Chéng Pèi Fāng Yī LàN</rt></ruby>（点击自动填充 Diǎn Jī Zì Dòng Tián Chōng）</h3>
+                            <div class="recipe-list-grid" id="recipe-list-grid"></div>
+                        </div>
+                    </div>
+                </div>
+                <div id="crafting-close">按 E <ruby>关闭<rt>Guān Bì</rt></ruby> | <ruby>拖拽材料到格子<rt>Tuō Rài Cáiliào Dào Gé Zi</rt></ruby> | <ruby>点击输出或按钮合成<rt>Diǎn Jī Shū Chū Huò Ān Niǔ Hé Chéng</rt></ruby></div>
+            </div>
+        </div>
+        
+        <!-- 材料提示框 -->
+        <div class="mat-tooltip" id="mat-tooltip"></div>
+        
+        <!-- 存档面板 -->
+        <div id="save-panel-overlay">
+            <div id="save-panel">
+                <h2>💾 <ruby>存档管理<rt>Cún Dàng Guǎn Lǐ</rt></ruby></h2>
+                <div class="save-btn-group">
+                    <div class="save-btn" id="save-btn-local">
+                        <span class="save-icon">💾</span>
+                        <span class="save-title"><ruby>本地保存<rt>Běn Dì Bǎo Cún</rt></ruby></span>
+                        <span class="save-desc"><ruby>保存到浏览器缓存<rt>Bǎo Cún Dào Lǎn Kàn Qiú Huàn Cún</rt></ruby></span>
+                    </div>
+                    <div class="save-btn" id="save-btn-load">
+                        <span class="save-icon">📂</span>
+                        <span class="save-title"><ruby>读取存档<rt>Dú Qǔ Cún Dàng</rt></ruby></span>
+                        <span class="save-desc"><ruby>从浏览器缓存读取<rt>Cóng Lǎn Kàn Qiú Huàn Cún Dú Qǔ</rt></ruby></span>
+                    </div>
+                    <div class="save-btn" id="save-btn-file-save">
+                        <span class="save-icon">📁</span>
+                        <span class="save-title"><ruby>保存文件<rt>Bǎo Cún Wén Jiàn</rt></ruby></span>
+                        <span class="save-desc"><ruby>选择文件夹自动存档<rt>Xuǎn Zé Wén Jiàn Jié Zì Dòng Bǎo Cún</rt></ruby></span>
+                    </div>
+                    <div class="save-btn" id="save-btn-file-open">
+                        <span class="save-icon">📂</span>
+                        <span class="save-title"><ruby>打开文件<rt>Dǎ Kāi Wén Jiàn</rt></ruby></span>
+                        <span class="save-desc">从JSON<ruby>文件读取<rt>Cóng JSON Wén Jiàn Dú Qǔ</rt></ruby></span>
+                    </div>
+                </div>
+                <div class="save-status" id="save-status"><ruby>存档状态<rt>Cún Dàng Zhuàng Tài</rt></ruby>：<ruby>未设置文件存档<rt>Wèi Shè Zhì Wén Jiàn Cún Dàng</rt></ruby><br>💡 点击"保存文件"选择 progress 文件夹，游戏将自动保存存档</div>
+                <div id="crafting-close" style="text-align:center;color:#aaa;font-size:12px;">按 ESC <ruby>关闭<rt>Guān Bì</rt></ruby></div>
+            </div>
+        </div>
+        
+        <!-- 城市传送面板（地图模式） -->
+        <div id="city-teleport-overlay">
+            <div id="city-teleport-panel">
+                <h2>🗺️ <ruby>城市传送地图<rt>Chéng Shì Chuán Sòng Dì Tú</rt></ruby> <button onclick="toggleCityTeleport()" style="float:right;background:#ff5555;border:none;color:#fff;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:12px;">✕ <ruby>关闭<rt>Guān Bì</rt></ruby></button></h2>
+                <p class="subtitle">按 M 打开/关闭 (Dǎ Kāi/Guān Bì) | <ruby>点击地图上的城市传送<rt>Diǎn Jī Dì Tú Shàng De Chéng Shì Chuán Sòng</rt></ruby></p>
+                <div class="map-legend">
+                    <span><span class="legend-dot" style="background:#ff4444"></span> <ruby>玩家位置<rt>Wán Jiā Wèi Zhì</rt></ruby></span>
+                    <span><span class="legend-dot" style="background:#5f5;border:2px solid #fff"></span> <ruby>已解锁城市<rt>Yǐ Jiě Suǒ Chéng Shì</rt></ruby></span>
+                    <span><span class="legend-dot" style="background:#555"></span> <ruby>未解锁城市<rt>Wèi Jiě Suǒ Chéng Shì</rt></ruby></span>
+                    <span><span class="legend-dot" style="background:#ff4488"></span> ⚔️ <ruby>副本入口<rt>Fù Běn Rù Kǒu</rt></ruby></span>
+                </div>
+                <div class="map-container" id="city-map-container"></div>
+                <div id="crafting-close" style="text-align:center;color:#aaa;font-size:12px;">按 M 或 ESC <ruby>关闭<rt>Guān Bì</rt></ruby></div>
+            </div>
+        </div>
+        
+        <!-- 世界地图面板 -->
+        <div id="world-map-overlay">
+            <div id="world-map-panel">
+                <h2>🗺️ <ruby>世界地图<rt>Shì Jiè Dì Tú</rt></ruby> - <ruby>出生点选择<rt>Chū Shēng Diǎn Xuǎn Zé</rt></ruby> <button onclick="toggleWorldMap()" style="float:right;background:#ff5555;border:none;color:#fff;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:12px;">✕ <ruby>关闭<rt>Guān Bì</rt></ruby></button></h2>
+                <p class="subtitle">按 N 打开/关闭 (Dǎ Kāi/Guān Bì) | <ruby>点击地图上的点传送出生<rt>Diǎn Jī Dì Tú Shàng De Diǎn Chuán Sòng Chū Shēng</rt></ruby></p>
+                <div class="map-legend">
+                    <span><span class="legend-dot" style="background:#ff4444"></span> <ruby>玩家位置<rt>Wán Jiā Wèi Zhì</rt></ruby></span>
+                    <span><span class="legend-dot" style="background:#5f5;border:2px solid #fff"></span> <ruby>已解锁出生点<rt>Yǐ Jiě Suǒ Chū Shēng Diǎn</rt></ruby></span>
+                    <span><span class="legend-dot" style="background:#555"></span> <ruby>未解锁出生点<rt>Wèi Jiě Suǒ Chū Shēng Diǎn</rt></ruby></span>
+                    <span><span class="legend-dot" style="background:#ff4488"></span> ⚔️ <ruby>副本入口<rt>Fù Běn Rù Kǒu</rt></ruby></span>
+                </div>
+                <div class="map-container" id="map-container"></div>
+                <div id="crafting-close" style="text-align:center;color:#aaa;font-size:12px;">按 N 或 ESC <ruby>关闭<rt>Guān Bì</rt></ruby></div>
+            </div>
+        </div>
+
+        <!-- 每日任务面板（T键） -->
+        <div id="daily-task-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:1000;justify-content:center;align-items:center;">
+            <div style="background:#1a1a2e;border:2px solid #ffd700;border-radius:12px;padding:20px;width:420px;max-height:80vh;overflow-y:auto;">
+                <h2 style="color:#ffd700;text-align:center;margin:0 0 10px;">📋 <ruby>每日任务<rt>Měi Rì Rèn Wù</rt></ruby> <button onclick="toggleDailyTaskPanel()" style="float:right;background:#ff5555;border:none;color:#fff;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px;">✕</button></h2>
+                <div id="daily-task-list"></div>
+                <div style="text-align:center;color:#aaa;font-size:11px;margin-top:8px;">按 T <ruby>关闭<rt>Guān Bì</rt></ruby> | 每日0点刷新任务</div>
+            </div>
+        </div>
+
+        <!-- 成就徽章面板（B键已有角色面板，用Y键） -->
+        <div id="badge-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:1000;justify-content:center;align-items:center;">
+            <div style="background:#1a1a2e;border:2px solid #ffd700;border-radius:12px;padding:20px;width:500px;max-height:80vh;overflow-y:auto;">
+                <h2 style="color:#ffd700;text-align:center;margin:0 0 10px;">🏆 <ruby>成就徽章<rt>Chéng Jiù Huī Zhāng</rt></ruby> <button onclick="toggleBadgePanel()" style="float:right;background:#ff5555;border:none;color:#fff;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px;">✕</button></h2>
+                <div id="badge-list" style="text-align:center;"></div>
+                <div style="text-align:center;color:#aaa;font-size:11px;margin-top:8px;">按 Y <ruby>关闭<rt>Guān Bì</rt></ruby> | 解锁徽章获得金币奖励</div>
+            </div>
+        </div>
+
+        <!-- 场景图鉴面板（J键） -->
+        <div id="biome-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:1000;justify-content:center;align-items:center;">
+            <div style="background:#1a1a2e;border:2px solid #88ff88;border-radius:12px;padding:20px;width:500px;max-height:80vh;overflow-y:auto;">
+                <h2 style="color:#88ff88;text-align:center;margin:0 0 10px;">🗺️ <ruby>场景图鉴<rt>Chǎng Jǐng Tú Jiàn</rt></ruby> <button onclick="toggleBiomePanel()" style="float:right;background:#ff5555;border:none;color:#fff;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px;">✕</button></h2>
+                <div id="biome-list" style="text-align:center;"></div>
+                <div style="text-align:center;color:#aaa;font-size:11px;margin-top:8px;">按 J <ruby>关闭<rt>Guān Bì</rt></ruby> | 发现新场景获得金币</div>
+            </div>
+        </div>
+
+        <!-- 金币显示（顶部居中） -->
+        <div id="coins-display" style="position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:100;background:rgba(20,20,30,0.9);border:1px solid #ffd700;border-radius:8px;padding:4px 14px;font-size:16px;color:#ffd700;font-weight:bold;pointer-events:none;">
+            💰 <span id="coins-val">0</span>
+        </div>
+
+        <!-- 点击开始遮罩页 -->
+        <div id="blocker">
+            <div id="instructions">
+                <h1><ruby>我的世界<rt>Wǒ de Shì Jiè</rt></ruby> (Minecraft Web)</h1>
+                <div id="loading-indicator" style="text-align:center;margin:15px 0;">
+                    <div style="font-size:36px;animation:spin 1s linear infinite;">⚙️</div>
+                    <p style="color:#ff5;margin:10px 0;">加载中 (Zài Jiā Zài Zhōng)... 请稍候 (Qǐng Shāo Hòu)</p>
+                    <p style="font-size:12px;color:#aaa;">正在加载纹理和地形数据 (Zài Jiā Zài Wén Lǐ Hé Dì Xíng Shù Jù)</p>
+                </div>
+                <p>🎮 点击下方按钮开始进入游戏控制 (Diǎn Jī Xià Fāng Àn Niǔ Kāi Shǐ)</p>
+                
+                <!-- 移动控制 -->
+                <div class="key-grid">
+                    <div class="key-item"><span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span><span class="desc">移动 (Yí Dòng)</span></div>
+                    <div class="key-item"><span class="key">Space</span><span class="desc">跳跃/上浮 (Tiào Yuè/Fú Shàng)</span></div>
+                    <div class="key-item"><span class="key">Shift</span><span class="desc">下沉/冲刺 (Xià Chén/Sōng Chì)</span></div>
+                    <div class="key-item"><span class="key">F</span><span class="desc">飞行模式 (Fēi xíng Mó Shì)</span></div>
+                    <div class="key-item"><span class="key">V</span><span class="desc">切换视角 (Qiē Huàn Shì Jiǎo)</span></div>
+                    <div class="key-item"><span class="key">C</span><span class="desc">磕头恢复 (Kē Tóu Huī Fù)</span></div>
+                </div>
+                
+                <!-- 功能面板 -->
+                <div class="key-grid">
+                    <div class="key-item"><span class="key">B</span><span class="desc">角色面板 (Jiǎo Sè Miàn Bǎn)</span></div>
+                    <div class="key-item"><span class="key">P</span><span class="desc">属性面板 (Shǔ Xìng Miàn Bǎn)</span></div>
+                    <div class="key-item"><span class="key">M</span><span class="desc">城市传送 (Chéng Shì Chuán Sòng)</span></div>
+                    <div class="key-item"><span class="key">N</span><span class="desc">世界地图 (Shì Jiè Dì Tú)</span></div>
+                    <div class="key-item"><span class="key">L</span><span class="desc">教材关卡 (Jiào Cái Guān Kǎ)</span></div>
+                    <div class="key-item"><span class="key">R</span><span class="desc">课文朗读 (Kè Wén Lǎng Dú)</span></div>
+                </div>
+                
+                <!-- 🎮 趣味系统快捷键 -->
+                <div class="key-grid">
+                    <div class="key-item"><span class="key">T</span><span class="desc">每日任务 (Měi Rì Rèn Wù) 💰</span></div>
+                    <div class="key-item"><span class="key">Y</span><span class="desc">成就徽章 (Chéng Jiù) 🏆</span></div>
+                    <div class="key-item"><span class="key">J</span><span class="desc">场景图鉴 (Tú Jiàn) 🗺️</span></div>
+                    <div class="key-item"><span class="key">G</span><span class="desc">脱困传送 (Tuō Kùn) 🆘</span></div>
+                </div>
+                
+                <!-- 鼠标和物品 -->
+                <div class="key-grid">
+                    <div class="key-item"><span class="key">左键</span><span class="desc">破坏方块/攻击怪物 (Pò Huài Fāng Kuài)</span></div>
+                    <div class="key-item"><span class="key">右键</span><span class="desc">放置方块 (Fàng Zhì Fāng Kuài)</span></div>
+                    <div class="key-item"><span class="key">1-0</span><span class="desc">切换方块/工具 (Qiē Huàn Fāng Kuài)</span></div>
+                    <div class="key-item"><span class="key">滚轮</span><span class="desc">切换方块/工具 (Qiē Huàn)</span></div>
+                </div>
+                
+                <p style="color:#ff8888;font-size:13px;">⚠️ 小心！夜晚 (Yè Wǎn) 苦力怕 (Kǔ Lì Pà) 僵尸 (Jiāng Shī) 骷髅 (Kū Lóu) 蜘蛛 (Zhī Zhū) 末影人 (Mò Yǐng Rén) 会攻击你</p>
+                <p style="color:#55ff55;font-size:13px;">💚 找到奶奶 (Nǎi Nai) 或爷爷 (Yé Ye)，按 C 磕头可恢复生命和饥饿值 (Kē Tóu Kě Huī Fù)</p>
+                <p style="color:#88aaff;font-size:13px;">📁 点击「文件」按钮可保存存档到本地文件 (Diǎn Jī「Wén Jiàn」Bǎo Cún Cún Dàng)</p>
+                <p style="font-size:12px;color:#888;margin-top:8px;">若浏览器不支持鼠标锁定，开始后将自动进入「按住鼠标拖动看视角」模式</p>
+                
+                <button id="start-btn">🎮 开始游戏 (Kāi Shǐ Yóu Xì)</button>
+                <div style="margin-top:15px;display:flex;gap:10px;justify-content:center;">
+                    <button class="game-btn" id="start-save-btn" style="background:#445;border-color:#888;">
+                        <span class="btn-icon">💾</span>
+                        <span class="btn-text">保存游戏 (Bǎo Cún Yóu Xì)</span>
+                    </button>
+                    <button class="game-btn" id="start-load-btn" style="background:#445;border-color:#888;">
+                        <span class="btn-icon">📂</span>
+                        <span class="btn-text">读取存档 (Dú Qǔ Cún Dàng)</span>
+                    </button>
+                </div>
+
+        <!-- 副本界面 -->
+        <div id="dungeon-overlay">
+            <div id="dungeon-panel">
+                <h2 id="dungeon-title">📚 <ruby>语文副本<rt>Yǔ Wén Fù Běn</rt></ruby></h2>
+                <div class="dungeon-progress" id="dungeon-progress"></div>
+                <div id="dungeon-monster-count" style="margin:10px 0;font-size:14px;color:#ff8888"></div>
+                <div class="question-box" id="dungeon-question-box">
+                    <div class="question-text" id="dungeon-question"></div>
+                    <button id="dungeon-speak-btn" style="margin:6px 0;padding:4px 10px;background:#3a3;font:none;border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:13px;" title="<ruby>点击重新朗读题目<rt>Diǎn Jī Lǎng Dú Tí Mù</rt></ruby>">🔊 <ruby>朗读题目<rt>Lǎng Dú Tí Mù</rt></ruby></button>
+                    <div class="question-options" id="dungeon-options"></div>
+                </div>
+                <div id="dungeon-reward"></div>
+                <div id="dungeon-status" style="margin:10px 0;font-size:14px;color:#aaa"></div>
+                <button id="dungeon-close"><ruby>关闭<rt>Guān Bì</rt></ruby></button>
+            </div>
+        </div>
+
+        <!-- 传送门确认提示 -->
+        <div id="portal-prompt-overlay">
+            <div id="portal-prompt-panel">
+                <div id="portal-prompt-title">⚔️ <ruby>副本传送门<rt>Fù Běn Chuán Sòng Mén</rt></ruby></div>
+                <div id="portal-prompt-text"></div>
+                <div id="portal-prompt-buttons">
+                    <button id="portal-yes-btn">✅ <ruby>进入副本<rt>Jìn Rù Fù Běn</rt></ruby></button>
+                    <button id="portal-no-btn">❌ <ruby>取消<rt>Qǔ Xiāo</rt></ruby></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 城市传送门确认 -->
+        <div id="city-portal-prompt-overlay">
+            <div id="city-portal-prompt-panel">
+                <div id="city-portal-prompt-title">🌆 <ruby>城市传送门<rt>Chéng Shì Chuán Sòng Mén</rt></ruby></div>
+                <div id="city-portal-prompt-text"></div>
+                <div id="city-portal-prompt-buttons">
+                    <button id="city-portal-yes-btn">✅ <ruby>传送<rt>Chuán Sòng</rt></ruby></button>
+                    <button id="city-portal-no-btn">❌ <ruby>取消<rt>Qǔ Xiāo</rt></ruby></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 课文朗读面板 -->
+        <div id="reading-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:999;overflow-y:auto;padding:20px;">
+            <div style="max-width:700px;margin:0 auto;">
+                <h2 style="color:#ffd700;text-align:center;margin-bottom:10px;">📖 <ruby>课文朗读<rt>Kè Wén Lǎng Dú</rt></ruby></h2>
+                <div style="text-align:center;color:#aaa;margin-bottom:15px;">👴<ruby>爷爷→语文<rt>Yé Ye → Yǔ Wén</rt></ruby> | 👵<ruby>奶奶→英语<rt>Nǎi Nai → Yīng Yǔ</rt></ruby> | 🐰<ruby>泽宇→数学<rt>Zé Yǔ → Shù Xué</rt></ruby></div>
+                <div id="reading-tabs" style="display:flex;gap:8px;justify-content:center;margin-bottom:15px;"></div>
+                <div id="reading-progress"></div>
+                <div id="reading-content" style="background:#1a1a2e;border-radius:8px;padding:15px;color:#ddd;font-size:14px;line-height:1.8;"></div>
+                <div style="display:flex;gap:10px;justify-content:center;margin-top:15px;">
+                    <button id="reading-prev" style="padding:6px 16px;background:#2a2a4e;color:#fff;border:none;border-radius:4px;cursor:pointer;">⏮ <ruby>上一篇<rt>Shàng Yī Piān</rt></ruby></button>
+                    <button id="reading-speak" style="padding:6px 16px;background:#3a3;color:#fff;border:none;border-radius:4px;cursor:pointer;">🔊 <ruby>朗读<rt>Lǎng Dú</rt></ruby></button>
+                    <button id="reading-next" style="padding:6px 16px;background:#2a2a4e;color:#fff;border:none;border-radius:4px;cursor:pointer;">⏭ <ruby>下一篇<rt>Xià Yī Piān</rt></ruby></button>
+                </div>
+                <div style="text-align:center;margin-top:10px;color:#888;font-size:12px;">🎮 在游戏中走到<ruby>爷爷/奶奶/泽宇<rt>Yé Ye / Nǎi Nai / Zé Yǔ</rt></ruby>身边按 <b>E</b> 键即可听朗读</div>
+                <button id="reading-close" style="display:block;margin:15px auto 0;padding:8px 30px;background:#c33;color:#fff;border:none;border-radius:4px;cursor:pointer;">✕ <ruby>关闭<rt>Guān Bì</rt></ruby></button>
+            </div>
+        </div>
+
+        <!-- 教材关卡系统 -->
+        <div id="level-overlay">
+            <div id="level-panel">
+                <h2>📚 <ruby>教材闯关挑战<rt>Jiào Cái Chuǎn Guān Tiǎo Zhàn</rt></ruby></h2>
+                <div id="level-subtitle"><ruby>按单元完成挑战<rt>Àn Dān Yuán Wán Chéng</rt></ruby> · <ruby>通关获得宝箱奖励<rt>Tōng Guān Huò Dé Bǎo Xiāng</rt></ruby></div>
+                <div class="level-tabs" id="level-tabs"></div>
+                <div class="level-unit-list" id="level-unit-list"></div>
+                <div class="level-note"><ruby>按<rt>Àn</rt></ruby> <b>L</b> <ruby>或右侧按钮开关<rt>Huò Yòu Cè Ān Niǔ</rt></ruby> · 得分 ≥40% 青铜宝箱（铁矿/煤） · ≥80% 白银宝箱（+玻璃/火把） · ≥95% 黄金宝箱（超级武器⚔️+稀有矿产） · 通关后宝箱方块会生成在脚边，挖开可再次开箱</div>
+                <button id="level-close"><ruby>关闭<rt>L</rt></ruby> (Guān Bì)</button>
+            </div>
+        </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="minecraft-3d.js"></script>
+</body>
+</html>
