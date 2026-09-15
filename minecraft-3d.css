@@ -54,15 +54,34 @@
             height: 20px;
         }
 
-        /* 快捷栏 (Hotbar) —— 两行 Grid 布局，每行数量相等 */
-        #hotbar-container {
+        /* 底部 HUD：按钮面板 + 快捷栏，纵向堆叠、整体锚定在底部居中。
+           快捷栏行数会随物品数量变化（40 件=2 行，加超级武器/金箍棒后=3 行），
+           用 flex 让按钮面板始终贴在快捷栏上方，不会被快捷栏盖住。
+           pointer-events:none 保证容器空白处不挡鼠标锁定 */
+        #hud-bottom {
             position: absolute;
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 40px;
+            z-index: 12;
+            pointer-events: none;
+        }
+
+        /* 快捷栏 (Hotbar) —— Grid 布局，20 列自动换行。
+           必须保留 position:relative，否则 .hotbar-slot 的 offsetLeft 会
+           相对 #hud-bottom 计算，selectSlot() 里的横向滚动会失效 */
+        #hotbar-container {
+            position: relative;
+            pointer-events: auto;
             display: grid;
             grid-template-columns: repeat(20, 44px);
-            gap: 4px;
+            /* 行距 22px：.slot-name 向下延伸约 18px，行距必须足够，
+               否则第二行的方块格子会盖住第一行的汉字名称 */
+            gap: 22px 4px;
             justify-content: center;
             background: rgba(0, 0, 0, 0.7);
             border: 3px solid #333;
@@ -619,12 +638,9 @@
             overflow: hidden;
         }
         
-        /* 功能按钮面板 */
+        /* 功能按钮面板 —— 由 #hud-bottom 的 flex 布局定位，
+           不再自己用 bottom 绝对定位，才能跟着快捷栏行数自动上移 */
         #btn-panel {
-            position: absolute;
-            bottom: 200px;
-            left: 50%;
-            transform: translateX(-50%);
             display: flex;
             gap: 10px;
             z-index: 12;

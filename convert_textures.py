@@ -1,29 +1,34 @@
 #!/usr/bin/env python3
 """
 🎨 Minecraft Web 3D 纹理转换工具
-将 textures/ 文件夹中的照片转换为 base64 并更新到 JS 文件中
+将 textures/ 文件夹中的图片转换为 base64 并更新到 JS 文件中
+
+游戏已内置 15 张纯色占位纹理，开箱即玩，不需要任何图片文件。
+本工具仅用于可选地替换为自己的图片。
 
 使用方法:
-1. 将照片放入 textures/ 文件夹
+1. 将图片放入 textures/ 文件夹
 2. 运行: python3 convert_textures.py
-3. 照片会自动替换到游戏中!
+3. 图片会自动替换到游戏中!
 
-照片命名对应关系:
-  dad.jpg      → 苦力怕
-  mom.jpg      → 僵尸
-  pig.jpg      → 猪
-  cow.jpg      → 牛
-  sheep.jpg    → 羊
-  chicken.jpg  → 鸡
-  bat.jpg      → 蝙蝠
-  spider.jpg   → 蜘蛛 (或 aunt.jpg)
-  enderman.jpg → 末影人 (或 uncle.jpg)
-  wolf.jpg     → 狼 (或 shuaishu.jpg)
-  skeleton.jpg → 骷髅 (或 ruyi.jpg)
-  rabbit.jpg   → 兔子 (或 zeyu.jpg)
-  grandma.jpg  → 奶奶
-  grandpa.jpg  → 爷爷
-  player.jpg   → 玩家皮肤
+⚠️ 提交到 GitHub 前，请确认纹理中不包含个人照片。
+
+图片命名对应关系:
+  creeper.png  → 苦力怕
+  zombie.png   → 僵尸
+  pig.png      → 猪
+  cow.png      → 牛
+  sheep.png    → 羊
+  chicken.png  → 鸡
+  bat.png      → 蝙蝠
+  spider.png   → 蜘蛛
+  enderman.png → 末影人
+  wolf.png     → 狼
+  skeleton.png → 骷髅
+  rabbit.png   → 兔子
+  blaze.png    → 烈焰人（守护者）
+  phantom.png  → 幻翼（守护者）
+  player.png   → 玩家皮肤
 """
 
 import base64
@@ -46,26 +51,21 @@ IMAGE_SIZE = 128  # 纹理尺寸
 
 # 纹理映射：文件名 -> 代码中的键名
 FILE_MAP = {
-    'dad': 'DAD',
-    'mom': 'MOM',
+    'creeper': 'CREEPER',
+    'zombie': 'ZOMBIE',
     'pig': 'PIG',
     'cow': 'COW',
     'sheep': 'SHEEP',
     'chicken': 'CHICKEN',
     'bat': 'BAT',
-    'spider': 'AUNT',
-    'aunt': 'AUNT',
-    'enderman': 'UNCLE',
-    'uncle': 'UNCLE',
-    'wolf': 'SHUAISHU',
-    'shuaishu': 'SHUAISHU',
-    'skeleton': 'RUYI',
-    'ruyi': 'RUYI',
+    'spider': 'SPIDER',
+    'enderman': 'ENDERMAN',
+    'wolf': 'WOLF',
+    'skeleton': 'SKELETON',
     'rabbit': 'RABBIT',
-    'zeyu': 'RABBIT',
-    'grandma': 'GRANDMA',
-    'grandpa': 'GRANDPA',
-    'player': 'PLAYER',  # 玩家皮肤
+    'blaze': 'GRANDMA',     # 烈焰人（守护者）
+    'phantom': 'GRANDPA',   # 幻翼（守护者）
+    'player': 'PLAYER',     # 玩家皮肤
 }
 
 

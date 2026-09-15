@@ -2,7 +2,11 @@
 
 ## 快速开始
 
-将家人/朋友的照片放入 `textures/` 文件夹，游戏会自动使用对应纹理！
+游戏已内置 15 张纯色占位纹理，开箱即玩，**不需要任何图片文件**。
+
+如果想换成自己的图片，可按下方步骤替换。
+
+> ⚠️ **提交到 GitHub 前，请确认纹理和 `minecraft-3d.js` 里都没有个人照片。**
 
 ---
 
@@ -10,21 +14,21 @@
 
 | 文件名 | 对应怪物 | 说明 |
 |--------|----------|------|
-| `dad.jpg` | 🟩 苦力怕 | 爸爸的照片 |
-| `mom.jpg` | 🟫 僵尸 | 妈妈的照片 |
-| `pig.jpg` | 🌸 猪 | 宠物猪 |
-| `cow.jpg` | 🟤 牛 | 宠物牛 |
-| `sheep.jpg` | ⬜ 羊 | 宠物羊 |
-| `chicken.jpg` | ⬜ 鸡 | 宠物鸡 |
-| `bat.jpg` | ⬛ 蝙蝠 | 蝙蝠 |
-| `spider.jpg` | ⬛ 蜘蛛 | 蜘蛛（也可用 `aunt.jpg`）|
-| `enderman.jpg` | 🟪 末影人 | 末影人（也可用 `uncle.jpg`）|
-| `wolf.jpg` | ⬜ 狼 | 狼（也可用 `shuaishu.jpg`）|
-| `skeleton.jpg` | ⬜ 骷髅 | 骷髅（也可用 `ruyi.jpg`）|
-| `rabbit.jpg` | ⬜ 兔子 | 兔子（也可用 `zeyu.jpg`）|
-| `grandma.jpg` | 🟨 奶奶 | 奶奶的照片 |
-| `grandpa.jpg` | 🔵 爷爷 | 爷爷的照片 |
-| `player.jpg` | 🔵 玩家 | 玩家角色皮肤 |
+| `creeper.png` | 🟩 苦力怕 | 纯色占位纹理 |
+| `zombie.png` | 🟫 僵尸 | 纯色占位纹理 |
+| `pig.png` | 🌸 猪 | 纯色占位纹理 |
+| `cow.png` | 🟤 牛 | 纯色占位纹理 |
+| `sheep.png` | ⬜ 羊 | 纯色占位纹理 |
+| `chicken.png` | ⬜ 鸡 | 纯色占位纹理 |
+| `bat.png` | ⬛ 蝙蝠 | 纯色占位纹理 |
+| `spider.png` | ⬛ 蜘蛛 | 纯色占位纹理 |
+| `enderman.png` | 🟪 末影人 | 纯色占位纹理 |
+| `wolf.png` | ⬜ 狼 | 纯色占位纹理 |
+| `skeleton.png` | ⬜ 骷髅 | 纯色占位纹理 |
+| `rabbit.png` | ⬜ 兔子 | 纯色占位纹理 |
+| `blaze.png` | 🟨 烈焰人 | 纯色占位纹理（守护者） |
+| `phantom.png` | 🔵 幻翼 | 纯色占位纹理（守护者） |
+| `player.png` | 🔵 玩家 | 纯色占位纹理 |
 
 ---
 
@@ -36,28 +40,32 @@
 mkdir textures
 ```
 
-### 2. 放入照片
+### 2. 放入纹理图片
 
-将照片命名为对应的文件名，放入 `textures/` 文件夹：
+游戏已内置纯色占位纹理，开箱即玩，**不需要任何图片文件**。
+
+如果想换成自己的图片，把 `.png` 命名为对应怪物名放入 `textures/` 文件夹：
 
 ```
 textures/
-├── dad.jpg          # 爸爸 → 苦力怕
-├── mom.jpg          # 妈妈 → 僵尸
-├── pig.jpg          # 宠物猪
-├── cow.jpg          # 宠物牛
-├── sheep.jpg        # 宠物羊
-├── chicken.jpg      # 宠物鸡
-├── bat.jpg          # 蝙蝠
-├── spider.jpg       # 蜘蛛
-├── enderman.jpg     # 末影人
-├── wolf.jpg         # 狼
-├── skeleton.jpg     # 骷髅
-├── rabbit.jpg       # 兔子
-├── grandma.jpg      # 奶奶
-├── grandpa.jpg      # 爷爷
-└── player.jpg       # 玩家皮肤
+├── creeper.png      # 苦力怕
+├── zombie.png       # 僵尸
+├── pig.png          # 猪
+├── cow.png          # 牛
+├── sheep.png        # 羊
+├── chicken.png      # 鸡
+├── bat.png          # 蝙蝠
+├── spider.png       # 蜘蛛
+├── enderman.png     # 末影人
+├── wolf.png         # 狼
+├── skeleton.png     # 骷髅
+├── rabbit.png       # 兔子
+├── blaze.png        # 烈焰人（守护者）
+├── phantom.png      # 幻翼（守护者）
+└── player.png       # 玩家皮肤
 ```
+
+然后运行 `python3 convert_textures.py` 把图片转成 base64 写回 JS。
 
 ### 3. 启动游戏
 
@@ -113,25 +121,21 @@ OUTPUT_FILE = 'minecraft-3d.js'
 
 # 纹理映射：文件名 -> 代码中的键名
 FILE_MAP = {
-    'dad': 'DAD',
-    'mom': 'MOM', 
+    'creeper': 'CREEPER',
+    'zombie': 'ZOMBIE',
     'pig': 'PIG',
     'cow': 'COW',
     'sheep': 'SHEEP',
     'chicken': 'CHICKEN',
     'bat': 'BAT',
-    'spider': 'AUNT',      # 蜘蛛使用 AUNT 键
-    'aunt': 'AUNT',
-    'enderman': 'UNCLE',   # 末影人使用 UNCLE 键
-    'uncle': 'UNCLE',
-    'wolf': 'SHUAISHU',    # 狼使用 SHUAISHU 键
-    'shuaishu': 'SHUAISHU',
-    'skeleton': 'RUYI',    # 骷髅使用 RUYI 键
-    'ruyi': 'RUYI',
+    'spider': 'SPIDER',
+    'enderman': 'ENDERMAN',
+    'wolf': 'WOLF',
+    'skeleton': 'SKELETON',
     'rabbit': 'RABBIT',
-    'zeyu': 'RABBIT',
-    'grandma': 'GRANDMA',
-    'grandpa': 'GRANDPA',
+    'blaze': 'GRANDMA',     # 烈焰人（守护者）
+    'phantom': 'GRANDPA',   # 幻翼（守护者）
+    'player': 'PLAYER',
 }
 
 def image_to_base64(img_path):

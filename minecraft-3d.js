@@ -123,8 +123,13 @@
         
         function speakText(text, rate) {
             if (!('speechSynthesis' in window)) return;
+            const ss = window.speechSynthesis;
             try {
-                window.speechSynthesis.cancel();
+                text = String(text == null ? '' : text).trim();
+                if (!text) return;
+                // 先清队列。Chrome 已知问题：cancel() 之后立刻 speak() 会把语音静默丢弃，
+                // 所以统一用下面的 setTimeout 延迟开讲，不在这一步直接 speak
+                try { ss.cancel(); } catch (e) {}
                 // 分段朗读：Chrome 中文 TTS 有长度限制，超过 ~200 字会中断
                 const segments = text.split(/(?<=[。！？，；\n])/);
                 const sentences = [];
@@ -137,22 +142,30 @@
                     }
                 }
                 if (buf.trim()) sentences.push(buf.trim());
-                
+                if (sentences.length === 0) return;
+
+                // 语音只选一次、整条链共用：链式朗读里每段重新选可能挑到不同语言的声音
+                const bestVoice = getBestChineseVoice();
+                // lang 必须跟 voice 的语言一致。之前写死 'zh-CN'，但用户选中的「美嘉」是
+                // zh-TW，两者冲突时 Chrome 会直接拒绝朗读
+                const speakLang = (bestVoice && bestVoice.lang) ? bestVoice.lang : 'zh-CN';
                 let idx = 0;
                 function speakNext() {
                     if (idx >= sentences.length) return;
                     const utter = new SpeechSynthesisUtterance(sentences[idx]);
-                    utter.lang = 'zh-CN';
+                    utter.lang = speakLang;
                     utter.rate = rate || 0.9;
                     utter.pitch = 1.0;
                     utter.volume = 1.0;
-                    const bestVoice = getBestChineseVoice();
                     if (bestVoice) utter.voice = bestVoice;
                     utter.onend = () => { idx++; speakNext(); };
                     utter.onerror = () => { idx++; speakNext(); };
-                    window.speechSynthesis.speak(utter);
+                    // Chrome 连续朗读约 15 秒后会自行暂停队列（crbug 1192195），
+                    // 每段开讲前再 resume 一次，避免链式朗读读到一半卡死
+                    if (ss.paused) { try { ss.resume(); } catch (e) {} }
+                    ss.speak(utter);
                 }
-                speakNext();
+                setTimeout(speakNext, 120);
             } catch (e) {
                 // TTS 失败不影响游戏
             }
@@ -391,20 +404,20 @@
 
         // 怪物类型定义（textureKey 对应 mobTextures 中的纹理）
         const MOB_TYPES = {
-            CREEPER:  { name: "苦力怕", pinyin: "kǔ lì pà", bodyColor: 0x55aa44, headColor: 0x55aa44, eyeColor: 0x000000, speed: 1.5, hostile: true, scale: 1.0, legs: 2, textureKey: 'DAD', nightAbility: 'explode', abilityName: '💥 自爆', abilityDesc: '靠近玩家时自爆造成范围伤害' },
-            ZOMBIE:   { name: "僵尸", pinyin: "jiāng shī", bodyColor: 0x4a6b4a, headColor: 0x6b8e23, eyeColor: 0xff0000, speed: 1.2, hostile: true, scale: 1.0, legs: 2, textureKey: 'MOM', nightAbility: 'heal', abilityName: '💚 群体治疗', abilityDesc: '治疗附近的僵尸' },
+            CREEPER:  { name: "苦力怕", pinyin: "kǔ lì pà", bodyColor: 0x55aa44, headColor: 0x55aa44, eyeColor: 0x000000, speed: 1.5, hostile: true, scale: 1.0, legs: 2, textureKey: 'CREEPER', nightAbility: 'explode', abilityName: '💥 自爆', abilityDesc: '靠近玩家时自爆造成范围伤害' },
+            ZOMBIE:   { name: "僵尸", pinyin: "jiāng shī", bodyColor: 0x4a6b4a, headColor: 0x6b8e23, eyeColor: 0xff0000, speed: 1.2, hostile: true, scale: 1.0, legs: 2, textureKey: 'ZOMBIE', nightAbility: 'heal', abilityName: '💚 群体治疗', abilityDesc: '治疗附近的僵尸' },
             PIG:      { name: "猪", pinyin: "zhū", bodyColor: 0xffb6c1, headColor: 0xffb6c1, eyeColor: 0x000000, speed: 0.8, hostile: false, scale: 0.9, legs: 4, textureKey: 'PIG', nightAbility: 'panic', abilityName: '🏃 恐慌逃跑', abilityDesc: '夜晚加速逃跑' },
-            SKELETON: { name: "骷髅", pinyin: "kū lóu", bodyColor: 0xeeeeee, headColor: 0xeeeeee, eyeColor: 0x000000, speed: 1.0, hostile: true, scale: 1.0, legs: 2, textureKey: 'RUYI', nightAbility: 'shoot', abilityName: '🏹 远程射击', abilityDesc: '发射箭矢远程攻击' },
-            SPIDER:   { name: "蜘蛛", pinyin: "zhī zhū", bodyColor: 0x222222, headColor: 0x222222, eyeColor: 0xff0000, speed: 2.0, hostile: true, scale: 1.1, legs: 8, textureKey: 'AUNT', nightAbility: 'climb', abilityName: '🧗 爬墙', abilityDesc: '可以攀爬墙壁和天花板' },
-            ENDERMAN: { name: "末影人", pinyin: "mò yǐng rén", bodyColor: 0x6600cc, headColor: 0x6600cc, eyeColor: 0xff00ff, speed: 1.5, hostile: true, scale: 1.3, legs: 2, textureKey: 'UNCLE', nightAbility: 'teleport', abilityName: '✨ 瞬移', abilityDesc: '瞬移到玩家身后攻击' },
-            WOLF:     { name: "狼", pinyin: "láng", bodyColor: 0x888888, headColor: 0x888888, eyeColor: 0x000000, speed: 1.5, hostile: false, scale: 1.0, legs: 4, textureKey: 'SHUAISHU', nightAbility: 'speed', abilityName: '⚡ 极速追击', abilityDesc: '速度翻倍追击猎物' },
+            SKELETON: { name: "骷髅", pinyin: "kū lóu", bodyColor: 0xeeeeee, headColor: 0xeeeeee, eyeColor: 0x000000, speed: 1.0, hostile: true, scale: 1.0, legs: 2, textureKey: 'SKELETON', nightAbility: 'shoot', abilityName: '🏹 远程射击', abilityDesc: '发射箭矢远程攻击' },
+            SPIDER:   { name: "蜘蛛", pinyin: "zhī zhū", bodyColor: 0x222222, headColor: 0x222222, eyeColor: 0xff0000, speed: 2.0, hostile: true, scale: 1.1, legs: 8, textureKey: 'SPIDER', nightAbility: 'climb', abilityName: '🧗 爬墙', abilityDesc: '可以攀爬墙壁和天花板' },
+            ENDERMAN: { name: "末影人", pinyin: "mò yǐng rén", bodyColor: 0x6600cc, headColor: 0x6600cc, eyeColor: 0xff00ff, speed: 1.5, hostile: true, scale: 1.3, legs: 2, textureKey: 'ENDERMAN', nightAbility: 'teleport', abilityName: '✨ 瞬移', abilityDesc: '瞬移到玩家身后攻击' },
+            WOLF:     { name: "狼", pinyin: "láng", bodyColor: 0x888888, headColor: 0x888888, eyeColor: 0x000000, speed: 1.5, hostile: false, scale: 1.0, legs: 4, textureKey: 'WOLF', nightAbility: 'speed', abilityName: '⚡ 极速追击', abilityDesc: '速度翻倍追击猎物' },
             COW:      { name: "牛", pinyin: "niú", bodyColor: 0x664422, headColor: 0x664422, eyeColor: 0x000000, speed: 0.6, hostile: false, scale: 1.1, legs: 4, textureKey: 'COW', nightAbility: 'bellow', abilityName: '🐮 牛吼', abilityDesc: '吼叫吓退附近的怪物' },
             SHEEP:    { name: "羊", pinyin: "yáng", bodyColor: 0xeeeeee, headColor: 0xeeeeee, eyeColor: 0x000000, speed: 0.7, hostile: false, scale: 0.9, legs: 4, textureKey: 'SHEEP', nightAbility: 'flee', abilityName: '🐑 快速逃跑', abilityDesc: '看到怪物时快速逃跑' },
             CHICKEN:  { name: "鸡", pinyin: "jī", bodyColor: 0xeeeeee, headColor: 0xeeeeee, eyeColor: 0x000000, speed: 1.0, hostile: false, scale: 0.8, legs: 2, wings: true, textureKey: 'CHICKEN', nightAbility: 'fly', abilityName: '🐔 夜间飞行', abilityDesc: '夜晚可以短暂飞行' },
             BAT:      { name: "蝙蝠", pinyin: "biān fú", bodyColor: 0x444444, headColor: 0x444444, eyeColor: 0xff0000, speed: 1.2, hostile: false, scale: 0.7, legs: 0, wings: true, flying: true, textureKey: 'BAT', nightAbility: 'sonar', abilityName: '🦇 声呐定位', abilityDesc: '用声波探测周围环境' },
             RABBIT:   { name: "兔子", pinyin: "tù zi", bodyColor: 0xdddddd, headColor: 0xeeeeee, eyeColor: 0x000000, speed: 0.9, hostile: false, scale: 0.8, legs: 4, ears: true, textureKey: 'RABBIT', nightAbility: 'hop', abilityName: '🐰 跳跃', abilityDesc: '可以跳跃躲避危险' },
-            GRANDMA:  { name: "奶奶", pinyin: "nǎi nai", bodyColor: 0xffcc66, headColor: 0xffcc66, eyeColor: 0x000000, speed: 0.5, hostile: false, scale: 10.0, legs: 2, textureKey: 'GRANDMA', guardian: true, nightAbility: 'bless', abilityName: '🙏 祝福', abilityDesc: '夜晚保护附近玩家不受攻击' },
-            GRANDPA:  { name: "爷爷", pinyin: "yé ye", bodyColor: 0x88aaff, headColor: 0x88aaff, eyeColor: 0x000000, speed: 0.5, hostile: false, scale: 10.0, legs: 2, textureKey: 'GRANDPA', guardian: true, nightAbility: 'shield', abilityName: '🛡️ 护盾', abilityDesc: '夜晚为附近玩家生成护盾' },
+            GRANDMA:  { name: "烈焰人", pinyin: "liè yàn rén", bodyColor: 0xffcc66, headColor: 0xffcc66, eyeColor: 0x000000, speed: 0.5, hostile: false, scale: 10.0, legs: 2, textureKey: 'GRANDMA', guardian: true, nightAbility: 'bless', abilityName: '🙏 祝福', abilityDesc: '夜晚保护附近玩家不受攻击' },
+            GRANDPA:  { name: "幻翼", pinyin: "huàn yì", bodyColor: 0x88aaff, headColor: 0x88aaff, eyeColor: 0x000000, speed: 0.5, hostile: false, scale: 10.0, legs: 2, textureKey: 'GRANDPA', guardian: true, nightAbility: 'shield', abilityName: '🛡️ 护盾', abilityDesc: '夜晚为附近玩家生成护盾' },
         };
 
         const hotbarItems = [
@@ -483,6 +496,18 @@
             if (name.includes('种子')) return inventory.seeds;
             if (name.includes('小麦')) return inventory.wheat;
             return 0; // 基础方块（草地/泥土/沙子等）不显示数量
+        }
+
+        // 快捷栏数量徽章 —— 统一规则，每个「可用」物品都显示一个徽章：
+        //   ×N  已采集的资源（原木/木板/石头/圆石/矿石/工作台/火把/种子/小麦）
+        //   ×1  工具/武器/载具（合成即获得，数量恒为 1）
+        //   ∞   基础方块（草地/泥土/沙子/玻璃等，可无限放置）
+        // 未合成的工具/武器不显示徽章 —— 格子已用 🔒 + 半透明表示锁定
+        function getSlotCountLabel(item) {
+            if (!item || !isItemAvailable(item)) return null;
+            if (item.type === 'tool' || item.type === 'weapon' || item.type === 'vehicle') return '×1';
+            const n = getItemCount(item);
+            return n > 0 ? ('×' + n) : '∞';
         }
 
         // 玩家库存（用于合成系统）
@@ -642,7 +667,7 @@
         let spawnX = 0, spawnZ = 0;
         let hungerTimer = 0;
         let nearGuardian = false;
-        let nearZeyu = false;  // 是否靠近泽宇（兔子）
+        let nearRabbit = false;  // 是否靠近兔子
         let guardianReadTimer = 0;  // 自动朗读计时器
 
         // 自动存档系统（三层：缓存 + 本地 + 文件）
@@ -1080,6 +1105,9 @@
         let thirdPerson = true;  // 第三人称/第一人称切换
         let handItem = null;
         let handItemMesh = null;
+        let fpHandItemMesh = null;  // 第一人称武器槽（挂在 playerArm 下）
+        let rifleHold = null;       // 双手持枪：第三人称的左/右前伸臂组
+        let fpTwoHand = null;       // 双手持枪：第一人称的左前伸臂
         let blocksMap = new Map(); // 存储所有方块 (key: "x,y,z", val: {typeId, instId})
         let treeBlocks = new Set(); // 存储树木方块（不碰撞）
         let blockChanges = new Map(); // 玩家修改的方块（key -> typeId，-1 表示移除），存档时持久化，重新加载 chunk 后应用
@@ -1377,13 +1405,13 @@
                 nameLabel.innerText = available ? item.name : '🔒' + item.name;
                 slot.appendChild(nameLabel);
 
-                // 显示数量
-                const count = getItemCount(item);
-                if (count > 0) {
-                    const countLabel = document.createElement('span');
-                    countLabel.className = 'slot-count';
-                    countLabel.innerText = '×' + count;
-                    slot.appendChild(countLabel);
+                // 显示数量（统一规则见 getSlotCountLabel：可用物品都有徽章）
+                const countLabel = getSlotCountLabel(item);
+                if (countLabel) {
+                    const countLabelEl = document.createElement('span');
+                    countLabelEl.className = 'slot-count';
+                    countLabelEl.innerText = countLabel;
+                    slot.appendChild(countLabelEl);
                 }
                 
                 slot.appendChild(keyLabel);
@@ -1911,7 +1939,6 @@
                 if (!slot) return;
                 
                 const available = isItemAvailable(item);
-                const count = getItemCount(item);
                 
                 // 更新锁定状态
                 if (available) {
@@ -1939,17 +1966,18 @@
                     nameLabel.style.color = available ? '#ddd' : '#666';
                 }
                 
-                // 更新数量
+                // 更新数量（统一规则见 getSlotCountLabel：可用物品都有徽章）
+                const countText = getSlotCountLabel(item);
                 let countLabel = slot.querySelector('.slot-count');
-                if (count > 0) {
+                if (countText) {
                     if (!countLabel) {
                         countLabel = document.createElement('span');
                         countLabel.className = 'slot-count';
                         slot.appendChild(countLabel);
                     }
-                    countLabel.innerText = '×' + count;
-                } else {
-                    if (countLabel) countLabel.remove();
+                    countLabel.innerText = countText;
+                } else if (countLabel) {
+                    countLabel.remove();
                 }
                 
                 // 更新键位标签
@@ -2259,14 +2287,14 @@
                         health = Math.min(maxHealth, health + 1);
                         hunger = Math.min(maxHunger, hunger + 1);
                         updateVitalsUI();
-                        showStatus('🙏 奶奶的祝福！');
+                        showStatus('🙏 烈焰人的祝福！');
                     }
                     break;
                 case 'shield':
                     if (dist < 15 && Math.random() < 0.003) {
                         playerShield = true;
                         playerShieldTimer = 5.0;
-                        showStatus('🛡️ 爷爷的护盾！');
+                        showStatus('🛡️ 幻翼的护盾！');
                         playSound('sine', 600, 0.2);
                     }
                     break;
@@ -3384,43 +3412,43 @@
 
             // 加载角色/怪物图片纹理
             const texLoader = new THREE.TextureLoader();
-            playerTexture = texLoader.load('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAIAAABMXPacAAABXklEQVR4nO3RsU0EARAEwQsWm3CwCQebiD6BN5GW3S5pzDZGqufj6+ftPr9/307/t/3z3w7VegAA2j0AAO0eAIB2/2w5erUHAKDdAwDQ7gEAaPcApgG2HL3aAwDQ7gEAaPcAALR7ANMAW45e7QEAaPcAALR7AADaPYBpgC1Hr/YAALR7AADaPQAA7R7ANMCWo1d7AADaPQAA7R4AgHYPYBpgy9GrPQAA7R4AgHYPAEC7BzANsOXo1R4AgHYPAEC7BwCg3QOYBthy9GoPAEC7BwCg3QMA0O4BTANsOXq1BwCg3QMA0O4BAGj3AKYBthy92gMA0O4BAGj3AAC0ewDTAFuOXu0BAGj3AAC0ewAA2j2AaYAtR6/2AAC0ewAA2j0AAO0ewDTAlqNXewAA2j0AAO0eAIB2D2AaYMvRqz0AAO0eAIB2DwBAuwcwDbDl6NUeAIB2DwBAuwcAoN0DGO5fgWlGzWhRXloAAAAASUVORK5CYII=');
+            playerTexture = texLoader.load('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAc0lEQVR42u3bMREAIBADwXeFDzRQIwdNuIIGFWSLm0m9far1eZIrAG+MtaMCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOBXAO/x0C6gwoknicTamgAAAABJRU5ErkJggg==');
             
             // 纹理映射表（textureKey -> base64字符串）
             // 新增图片只需在此添加即可自动应用到怪物身上
             const TEXTURE_MAP = {
-    AUNT: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAX0lEQVR4nO3PMQ0AMAzAsAIbf1wFscOqFCNI5h03OuBXA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA9oCGEhApvcRLJYAAAAASUVORK5CYII=',
-    BAT: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAX0lEQVR4nO3PMQ0AMAzAsKIbf0gFscOqFCNI5h03OuBXA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA9oCvuogxB3neToAAAAASUVORK5CYII=',
-    CHICKEN: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAXklEQVR4nO3PMQ0AMAzAsPInvYLYYVWKESTzjhsd8KsBrQGtAa0BrQGtAa0BrQGtAa0BrQHNQa0BrQGtAa0BrQHNQa0BrQGtAa0BrQHNQa0BrQGtAa0BrQHNQa0BrQHNQa0BrQGtAa0BrQHNQa0BrQGtAa0BrQHNQa0BrQGtAa0BbQHKU9LC7/CP1AAAAABJRU5ErkJggg==',
-    COW: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAe0lEQVR4nO3PUQkAIBTAwJfFLGaxfwRD+HEIgwW4zdnr64YLGtCCBrSgAS1oQAsa0IIGtKABLWhACxrQgga0oAEtaEALGtCCBrSgAS1oQAsa0IIGtKABLWhACxrQgga0oAEtaEALGtCCBrSgAS1oQAsa0IIGtKABLXjsAndywLVTwJAjAAAAAElFTkSuQmCC',
-    DAD: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAeklEQVR4nO3PUQkAIBTAwBfOCpY0pSH8OITBAtxmn/V1w0UNaEEDWtCAFjSgBQ1oQQNa0IAWNKAFDWhBA1rQgBY0oAUNaEEDWtCAFjSgBQ1oQAsa0IIGtKABLWhACxrQgga0oAEtaEALGtCCBrSgAS1oQAsa0IIGtKABLWhACxrQgBY0oAUNaEEDWtCAFjSgBQ1oQQNa0IAWPHYBy00xLQWX3ZQAAAAASUVORK5CYII=',
-    GRANDMA: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAeElEQVR4nO3PUQkAIBTAwJfWtHbSEH4cwmABbnP2+rrhgga0oAEtaEALGtCCBrSgAS1oQAsa0IIGtKABLWhACxrQgga0oAEtaEALGtCCBrSgAS1oQAsa0IIGtKABLWhACxrQgga0oAEtaEALGtCCBrSgAS1oQAseu1PzEg4RAuL7AAAAAElFTkSuQmCC',
-    GRANDPA: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAeElEQVR4nO3PUQkAIBTAwBffLJbUEH4cwmABbrP2+brhgga0oAEtaEALGtCCBrSgAS1oQAsa0IIGtKABLWhACxrQgga0oAEtaEALGtCCBrSgAS1oQAsa0IIGtKABLWhACxrQgga0oAEtaEALGtCCBrSgAS1oQAseu1L0Eg4EnRVDAAAAAElFTkSuQmCC',
-    MOM: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAeUlEQVR4nO3PQQkAMAzAwOqrlfn/T8QexyAQAZfZs183XNCAFjSgBQ1oQQNa0IAWNKAFDWhBA1rQgBY0oAUNaEEDWtCAFjSgBQ1oQQNa0IAWNKAFDWhBA1rQgBY0oAUNaEEDWtCAFjSgBQ1oQQNa01oAUNaEEDWtCAFjSgBQ1oQQNa0IAWNKAFDWjBYxe47PDiB/SGUQAAAABJRU5ErkJggg==',
-    PIG: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAeUlEQVR4nO3PwQkAIBDAsNt/IP9OpkP4CEKhA6Rz1v664YIGtKABLWhACxrQgga0oAEtaEALGtCCBrSgAS1oQAsa0IIGtKABLWhACxrQgga0oAEtaEALGtCCBrSgAS1oQAsa0IIGtKABLWhACxrQgga0oAEtaEALHru8iWJKYmRi4wAAAABJRU5ErkJggg==',
-    RABBIT: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAX0lEQVR4nO3PMQ0AMAzAsPLnOC4FscOqFCNI5h03OuBXA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA9oCxthyaEB+c4EAAAAASUVORK5CYII=',
-    RUYI: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAX0lEQVR4nO3PMQ0AMAzAsPIHOwwFscOqFCNI5h03OuBXA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA9oCSJ2ilfXpkB0AAAAASUVORK5CYII=',
-    SHEEP: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAX0lEQVR4nO3PMQ0AMAzAsPIHOwwFscOqFCNI5h03OuBXA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA9oCSJ2ilfXpkB0AAAAASUVORK5CYII=',
-    SHUAISHU: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAXklEQVR4nO3PMQ0AMAzAsMIf7ILYYVWKESTzjhsd8KsBrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQHNQa0BrQGtAa0BrQGtAa0BrQGtAa0BbQE+LIF4QHSJPwAAAABJRU5ErkJggg==',
-    UNCLE: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAeElEQVR4nO3PQQkAMAzAwKqd2omqiD2OQSACLnPmft1wQQNa0IAWNKAFDWhBA1rQgBY0oAUNaEEDWtCAFjSgBQ1oQQNa0IAWNKAFDWhBA1rQgBY0oAUNaEEDWtCAFjSgBQ1oQAsa0IIGtKABLWhACxrQgga0oAEtaEALGtCCBrSgAS1oQAseu1L0Eg4EnRVDAAAAAElFTkSuQmCC',
-};;
+                SPIDER: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAcUlEQVR42u3bMREAIBADwReCC6y8uVcLDSrIFjeTevtUrz7JFYA3Zk9UAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD8CuA9HtoFnh0KPLcYZLEAAAAASUVORK5CYII=',
+                BAT: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAbklEQVR42u3bMREAMAwDsZAxk/Cn1C5FUWv4O8/aPUlOcwPgjd2tCgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAXwG8x0u7hsz9ZopuPgwAAAAASUVORK5CYII=',
+                CHICKEN: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAaklEQVR42u3bsQkAQAwCwOyPO+ebnyKeIFhf7yTZ5g6AP9oCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMBVAO/x0j6AACckamBjzgAAAABJRU5ErkJggg==',
+                COW: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAdElEQVR42u3bMQ0AIBRDwa8BCSR4QABa8O8AFlTQG17S+fbWHO0kVwDe2KtHBQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADArwDe46FdjOj9ZpV6NCEAAAAASUVORK5CYII=',
+                CREEPER: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAc0lEQVR42u3bIREAIBREwV8GSwoqIClISTCk4Fa8mdPrr/pqJ7kC8MbcIyoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH4F8B4P7QIzDQU+DYxtEgAAAABJRU5ErkJggg==',
+                GRANDMA: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAcklEQVR42u3bMREAIBADwZeFImqEIA1PT4MKssXNpN4+tdfo5ArAG31mVAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/ArgPR7aBRntGLD3s7skAAAAAElFTkSuQmCC',
+                GRANDPA: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAcklEQVR42u3bMREAIBADwdeHB/xQoASTT4MKssXNpN4+Nebu5ArAG+t0VAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/ArgPR7aBcK0FsCRbcF8AAAAAElFTkSuQmCC',
+                ZOMBIE: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAcklEQVR42u3bMREAIBADwZfzGpDwVvBfQ4MKssXNpN4+1atPcgXgjdkTFQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAvwJ4j4d2AeBl/xPOm1nhAAAAAElFTkSuQmCC',
+                PIG: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAcUlEQVR42u3boREAIBADwS8WRS3Ug6eyx1AFWXEz0etTa8xOrgC80ftEBQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADArwDe46Fd7pEs3HFescoAAAAASUVORK5CYII=',
+                RABBIT: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAbUlEQVR42u3bsREAMAwCMa/NsJ4laTJFUPF31OqZJKe5AfDG7lYFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMCvAN7jpV0E8R36pxn1XAAAAABJRU5ErkJggg==',
+                SKELETON: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAbUlEQVR42u3bsREAMAwCMU/Lkh4uaTJFUPF31OqZJKe5AfDG7lYFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMCvAN7jpV2J0xTQazcyGwAAAABJRU5ErkJggg==',
+                SHEEP: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAbUlEQVR42u3bsREAMAwCMc/OwF4haTJFUPF31OqZJKe5AfDG7lYFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMCvAN7jpV1eih+nVIuUawAAAABJRU5ErkJggg==',
+                WOLF: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAbUlEQVR42u3bsREAMAwCMc/HZN46aTJFUPF31OqZJKe5AfDG7lYFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMCvAN7jpV21HAn5thb20gAAAABJRU5ErkJggg==',
+                ENDERMAN: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAb0lEQVR42u3boREAIAADsY7FRGgGZScwTEEj/q46vhlZp7kAeGNmVwUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwK8A3uOlXfqhBp+1cGBoAAAAAElFTkSuQmCC',
+            };
             
             // 纹理名称映射（textureKey -> 中文名称）
             TEXTURE_NAMES = {
                 PIG: '猪',
-                GRANDMA: '奶奶',
-                GRANDPA: '爷爷',
-                DAD: '爸爸',
-                MOM: '妈妈',
-                RUYI: '如意',
-                AUNT: '阿姨',
-                UNCLE: '叔叔',
-                SHUAISHU: '帅帅',
-                RABBIT: '泽宇',
-                COW: '刘一凡',
-                SHEEP: '妹妹',
-                CHICKEN: '潘晨烨',
-                BAT: '潘佳研',
+                GRANDMA: '烈焰人',
+                GRANDPA: '幻翼',
+                CREEPER: '苦力怕',
+                ZOMBIE: '僵尸',
+                SKELETON: '骷髅',
+                SPIDER: '蜘蛛',
+                ENDERMAN: '末影人',
+                WOLF: '狼',
+                RABBIT: '兔子',
+                COW: '牛',
+                SHEEP: '羊',
+                CHICKEN: '鸡',
+                BAT: '蝙蝠',
                 // 新增图片示例：在这里添加新的名称
                 // NEWMOB: '新名字',
             };
@@ -3488,7 +3516,13 @@
                 fallbackMode = true;
                 blocker.style.display = 'none';
                 gameActive = true;
-                renderer.domElement.style.cursor = 'none';
+                // 兜底模式下射线是从「点击位置」发出的（见 mouseup 里对 mouse 的赋值），
+                // 而不是屏幕中心。原来的 cursor:'none' 把光标藏起来，玩家只能看到中心那个
+                // 固定准星，却打不出准星指的地方——表现为"点不动/无法采集"。
+                // 改成显示系统十字光标，同时藏起中心准星，做到"点哪打哪"。
+                renderer.domElement.style.cursor = 'crosshair';
+                const ch = document.getElementById('crosshair');
+                if (ch) ch.style.display = 'none';
                 fallbackHint.style.display = 'block';
                 fallbackHint.innerHTML = '拖拽模式：浏览器未授予鼠标锁定<br>按住鼠标拖动 = 转动视角<br>点击（不拖动）= 左键破坏 / 右键放置<br>WASD 移动 / Space 跳跃';
             }
@@ -3555,6 +3589,8 @@
                 if (fallbackMode) return;
                 // 启动 2 秒内忽略 unlock（pointer lock 未授予时触发一次假 unlock，会把 gameActive 改回 false）
                 if (gameStartTime > 0 && Date.now() - gameStartTime < 2000) return;
+                // 答题界面主动解锁是为了让鼠标可用，不能退回主菜单（关闭时由「继续游戏」重新锁定）
+                if (document.getElementById('mini-game-overlay')) return;
                 blocker.style.display = 'flex';
                 gameActive = false;
                 renderer.domElement.style.cursor = 'auto';
@@ -3630,8 +3666,8 @@
                     '<span style="color:#ff5">V</span> 视角　' +
                     '<span style="color:#ff5">C</span> 磕头恢复　' +
                     '<span style="color:#ff5">1-0 / 滚轮</span> 切换<br>' +
-                    '<span style="color:#55ff55;font-size:13px">找到奶奶/爷爷按C磕头可恢复生命！</span><br>' +
-                    '<span style="color:#44ddff;font-size:13px">📖 走近爷爷/奶奶/泽宇自动朗读课文！</span><br>' +
+                    '<span style="color:#55ff55;font-size:13px">找到烈焰人/幻翼按C磕头可恢复生命！</span><br>' +
+                    '<span style="color:#44ddff;font-size:13px">📖 走近幻翼/烈焰人/兔子自动朗读课文！</span><br>' +
                     '<span style="color:#aaa;font-size:12px">6 秒后自动消失</span>';
                 if (promptEl._t) clearTimeout(promptEl._t);
                 promptEl._t = setTimeout(() => { promptEl.style.display = 'none'; }, 8000);
@@ -4422,7 +4458,7 @@
             // 生成怪物（减少数量避免阻塞主线程）
             await new Promise(r => setTimeout(r, 0));
             spawnMobs();
-            // 在出生点附近生成平坦陆地，确保奶奶爷爷有地方站
+            // 在出生点附近生成平坦陆地，确保两个保护神有地方站
             // 范围 ±12 格（减少填充量避免卡死），避免走出平坦区时地面高度突变
             updateProgress(60, '平整出生点...');
             await new Promise(r => setTimeout(r, 0));
@@ -4890,7 +4926,7 @@
             }
 
             // ===== 狼 WOLF：灰色身体、尖耳、长鼻、尾 =====
-            if (nameKey === 'SHUAISHU') {
+            if (nameKey === 'WOLF') {
                 // 身体
                 const bodyMat = mat;
                 const body = new THREE.Mesh(new THREE.BoxGeometry(0.4 * s, 0.35 * s, 0.7 * s), bodyMat);
@@ -5024,7 +5060,7 @@
             }
 
             // ===== 蜘蛛 SPIDER：圆身体、八条腿、红眼 =====
-            if (nameKey === 'AUNT') {
+            if (nameKey === 'SPIDER') {
                 // 圆身体
                 const bodyMat = mat;
                 const body = new THREE.Mesh(new THREE.SphereGeometry(0.2 * s, 8, 6), bodyMat);
@@ -5084,7 +5120,7 @@
             }
 
             // ===== 苦力怕 CREEPER：绿色、脸纹、四短腿 =====
-            if (nameKey === 'DAD') {
+            if (nameKey === 'CREEPER') {
                 // 身体
                 const bodyMat = mat;
                 const body = new THREE.Mesh(new THREE.BoxGeometry(0.4 * s, 0.5 * s, 0.25 * s), bodyMat);
@@ -5128,7 +5164,7 @@
             }
 
             // ===== 僵尸 ZOMBIE：绿皮肤、深色衣服、伸臂 =====
-            if (nameKey === 'MOM') {
+            if (nameKey === 'ZOMBIE') {
                 // 头部
                 const head = new THREE.Mesh(new THREE.BoxGeometry(0.4 * s, 0.4 * s, 0.4 * s), headMat);
                 head.position.y = 1.2 * s;
@@ -5186,7 +5222,7 @@
             }
 
             // ===== 骷髅 SKELETON：白骨、肋骨、头骨 =====
-            if (nameKey === 'RUYI') {
+            if (nameKey === 'SKELETON') {
                 // 头骨
                 const boneMat = headMat;
                 const skull = new THREE.Mesh(new THREE.BoxGeometry(0.35 * s, 0.35 * s, 0.3 * s), boneMat);
@@ -5248,7 +5284,7 @@
             }
 
             // ===== 末影人 ENDERMAN：高大瘦长、黑色身体、白色眼睛、漂浮 =====
-            if (nameKey === 'UNCLE') {
+            if (nameKey === 'ENDERMAN') {
                 // 头部（瘦长）- 使用纹理材质
                 const head = new THREE.Mesh(new THREE.BoxGeometry(0.25 * s, 0.4 * s, 0.25 * s), headMat);
                 head.position.y = 1.5 * s;
@@ -5317,7 +5353,7 @@
                 const mouth = new THREE.Mesh(new THREE.BoxGeometry(hs * 0.4, hs * 0.08, hs * 0.05), mouthMat);
                 mouth.position.set(0, -hs * 0.2, hs * 0.5);
                 head.add(mouth);
-                // 头发/帽子（爷爷蓝帽，奶奶白发）
+                // 头发/帽子（幻翼蓝帽，烈焰人白发）
                 if (nameKey === 'GRANDPA') {
                     const hatMat = new THREE.MeshLambertMaterial({ color: 0x224488 });
                     const hat = new THREE.Mesh(new THREE.BoxGeometry(hs * 1.1, hs * 0.15, hs * 1.1), hatMat);
@@ -5713,7 +5749,7 @@
             const baseZ = spawnZ;
             const baseH = getGroundY(baseX, baseZ);
             
-            // 奶奶和爷爷分开摆放（12格距离，确保不重叠 - 保护神体型是10倍大！）
+            // 两个保护神分开摆放（12格距离，确保不重叠 - 体型是10倍大！）
             const gmX = baseX - 12, gmZ = baseZ;
             const gpX = baseX + 12, gpZ = baseZ;
             
@@ -5745,7 +5781,7 @@
                 }
             }
             
-            // 重新获取奶奶和爷爷位置的地面高度
+            // 重新获取两个保护神位置的地面高度
             const gmGroundY = getGroundY(gmX, gmZ);
             const gpGroundY = getGroundY(gpX, gpZ);
             
@@ -6264,7 +6300,10 @@
             weaponGroup.position.y = -0.68;
             weaponGroup.rotation.x = -(Math.PI / 2) + 0.2;  // 补偿手臂倾斜，武器指向正前方(-Z)
             armGroup.add(weaponGroup);
+            // 注意：下面 createPlayerModel() 会再用 handGroup 覆盖 handItemMesh，
+            // 所以这里另存一份 fpHandItemMesh，否则第一人称永远拿不到武器
             handItemMesh = weaponGroup;
+            fpHandItemMesh = weaponGroup;
 
             armGroup.position.set(0.25, -0.2, -0.35);
             armGroup.rotation.x = -0.2;
@@ -6277,8 +6316,15 @@
             const group = new THREE.Group();
 
             // 🌟 玩家随身光源：确保夜晚玩家始终可见
-            const playerLight = new THREE.PointLight(0xffeedd, 0.4, 5, 2);
-            playerLight.position.set(0, 1.2, 0);
+            // 两个坑，都是实测确认的：
+            //  1) 光必须放到身体「外侧」。旧的 (0,1.2,0) 正好落在躯干盒子里，只照亮内表面，
+            //     第三人称相机看到的是背光面 → 夜里玩家照样是黑影（同强度：体内 躯干=6 / 体外=140）
+            //  2) 玩家朝向是本地 +Z（rotation.y = atan2(velocity.x, velocity.z)），而第三人称
+            //     相机在本地 -Z 侧，所以光要放在 -Z（身后）才照得到相机看到的那一面
+            //     （+Z 侧 躯干=20 / -Z 侧 躯干=140）
+            //  decay=1 弱衰减 + 射程 7：身边几个方块有一圈夜光晕，远处仍是夜
+            const playerLight = new THREE.PointLight(0xffeedd, 1.8, 7, 1);
+            playerLight.position.set(0, 1.5, -0.6);
             group.add(playerLight);
 
             const skinMat = new THREE.MeshLambertMaterial({ color: 0xe8b78a });
@@ -6403,44 +6449,125 @@
             while (handItemMesh.children.length > 0) {
                 handItemMesh.remove(handItemMesh.children[0]);
             }
+            if (fpHandItemMesh) {
+                while (fpHandItemMesh.children.length > 0) fpHandItemMesh.remove(fpHandItemMesh.children[0]);
+            }
+            // 清除上一把武器留下的「双手持枪臂」，并还原被它换掉的左/右原生手臂
+            // （走步枪/狙击枪时把 playerArmL/R、playerHandL/R 藏起来了）
+            if (rifleHold) { if (rifleHold.parent) rifleHold.parent.remove(rifleHold); rifleHold = null; }
+            if (fpTwoHand) { if (fpTwoHand.parent) fpTwoHand.parent.remove(fpTwoHand); fpTwoHand = null; }
+            if (playerArmL) { playerArmL.visible = true; playerArmL.rotation.set(0, 0, 0); }
+            if (playerArmR) { playerArmR.visible = true; playerArmR.rotation.set(0, 0, 0); }
+            if (playerHandL) playerHandL.visible = true;
+            if (playerHandR) playerHandR.visible = true;
+
             const item = hotbarItems[selectedBlockIndex];
-            
+            // 双手持枪：右手在握把，左手往前托。狙击枪枪管更长，左手要伸得更远
+            const nm = (item && item.name) || '';
+            const twoHandLeft = nm.indexOf('狙击') >= 0 ? [0.1, 0.68, -0.6]
+                              : nm.indexOf('步枪') >= 0 ? [0.1, 0.72, -0.44] : null;
+
             // 清除旧盾牌
             if (shieldMesh) { if (shieldMesh.parent) shieldMesh.parent.remove(shieldMesh); shieldMesh = null; }
             if (shieldInFirstPerson) { if (shieldInFirstPerson.parent) shieldInFirstPerson.parent.remove(shieldInFirstPerson); shieldInFirstPerson = null; }
             shieldVisible = false;
-            
+
             if (item && (item.type === 'weapon' || item.type === 'tool' || item.type === 'vehicle')) {
                 // 盾牌特殊处理：竖举在身前
-                if (item.name && item.name.indexOf('盾') >= 0) {
+                if (nm.indexOf('盾') >= 0) {
                     shieldVisible = true;
                     shieldMesh = createToolMesh(item);
-                    // 盾牌在 XY 平面，正面朝 Z 轴正方向
+                    // 盾牌在 XY 平面，盾片本体的装饰面（盾徽+徽记）朝本地 +Z
+                    // 玩家朝世界 -Z 前进，所以必须转 π 才能让装饰面真正朝前——
+                    // 之前 rotation.y=0 时装饰面朝 +Z，等于把盾牌举在身前却让木背对着敌人
                     // 第三人称：挂在左臂前方，举在身前
                     if (playerArmL && playerModel) {
                         const shieldHolder = new THREE.Group();
                         shieldHolder.position.set(-0.35, 1.0, -0.35); // 左臂前方
-                        shieldHolder.rotation.y = 0; // 正面朝前
+                        shieldHolder.rotation.y = Math.PI; // 装饰面朝前（-Z）
                         shieldHolder.scale.set(0.8, 0.8, 0.8);
                         shieldHolder.add(shieldMesh);
                         playerModel.add(shieldHolder);
                         shieldMesh.userData.holder = shieldHolder;
                     }
                     // 第一人称：显示在摄像头左侧前方
+                    // rotation.y 也要翻 π，跟第三人称一致：自己看到的是盾的内侧（木背+护手），
+                    // 装饰面留给敌人。保留原来的 0.15 小角度让它不至于正对镜头
                     if (playerArm) {
                         const fpShield = createToolMesh(item);
                         fpShield.position.set(-0.4, -0.15, -0.6);
                         fpShield.rotation.x = -0.1;
-                        fpShield.rotation.y = 0.15;
+                        fpShield.rotation.y = Math.PI + 0.15;
                         fpShield.scale.set(1.0, 1.0, 1.0);
                         camera.add(fpShield);
                         shieldInFirstPerson = fpShield;
                     }
                     return; // 盾牌不放入 handItemMesh
                 }
+
+                // === 第三人称 === 挂在右手拳头的 handGroup 上
                 handItem = createToolMesh(item);
+                if (twoHandLeft) {
+                    // 枪身整体左移 0.2：把枪托/枪身挪到两只手之间，否则枪全部压在右手一侧
+                    handItem.position.x = -0.2;
+                }
                 handItemMesh.add(handItem);
+
+                // === 双手持枪 === 右手握扳机柄（枪身后端），左手往前托住枪身
+                // 隐藏原生的左右手臂与拳头（它们垂在身体两侧，撑不住枪），换成两条
+                // 从左/右肩伸向枪身的前伸臂。坐标是 playerModel 本地系：handGroup 在
+                // (0.4, 0.65, -0.1)，rotation.x=-π/2 把本地 +Y 映射到世界 -Z，所以枪身
+                // 中心落在世界 (0.2, 0.65, -0.43~) 、握把在 (0.2, 0.59, -0.16)
+                if (twoHandLeft && playerModel && playerArmL && playerArmR) {
+                    playerArmL.visible = false;
+                    playerArmR.visible = false;
+                    if (playerHandL) playerHandL.visible = false;
+                    if (playerHandR) playerHandR.visible = false;
+                    rifleHold = new THREE.Group();
+                    rifleHold.add(makeReachingArm([0.45, 1.05, 0.02], [0.2, 0.6, -0.16]));  // 右手 → 握把
+                    rifleHold.add(makeReachingArm([-0.45, 1.05, 0.02], twoHandLeft));          // 左手 → 枪身/枪管
+                    playerModel.add(rifleHold);
+                }
+
+                // === 第一人称 === 之前 weaponGroup 一直是空的（被 createPlayerModel 覆盖了
+                // handItemMesh），所以第一人称看不到任何武器。这里单独挂一份到 playerArm 下，
+                // 视角切换时随 playerArm.visible 一起显隐。第一人称不左移枪身：不移动时握把
+                // 正好落在右手拳头顶端，是自然的右手持握
+                if (fpHandItemMesh) {
+                    fpHandItemMesh.add(createToolMesh(item));
+                    if (twoHandLeft && playerArm) {
+                        // 第一人称左臂：从画面左下方伸到枪身中段，挂在 playerArm 下
+                        // 才能跟着第一人称的挥臂动画一起动。坐标是 armGroup 本地系
+                        // （armGroup 在摄像头 (0.25,-0.2,-0.35)，rotation.x=-0.2）
+                        fpTwoHand = makeReachingArm([-0.6, -0.97, 0.01], [-0.1, -0.59, -0.28]);
+                        playerArm.add(fpTwoHand);
+                    }
+                }
             }
+        }
+
+        // 双手持枪用：造一条从 from 伸到 to 的手臂（上臂 + 前臂 + 拳头）
+        // 段的方向用 quaternion 对齐到 from→to，肘部向下偏一点做出自然弯折
+        function makeReachingArm(from, to) {
+            const g = new THREE.Group();
+            const skinMat = new THREE.MeshLambertMaterial({ color: 0xe8b78a });
+            const a = new THREE.Vector3(from[0], from[1], from[2]);
+            const b = new THREE.Vector3(to[0], to[1], to[2]);
+            const elbow = a.clone().add(b).multiplyScalar(0.5);
+            elbow.y -= a.distanceTo(b) * 0.14;   // 肘部下弯
+            function seg(p, q, th) {
+                const d = q.clone().sub(p);
+                const m = new THREE.Mesh(new THREE.BoxGeometry(th, d.length(), th), skinMat);
+                m.position.copy(p).add(q).multiplyScalar(0.5);
+                m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.clone().normalize());
+                g.add(m);
+            }
+            seg(a, elbow, 0.17);
+            seg(elbow, b, 0.15);
+            const fist = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.19, 0.19), skinMat);
+            fist.position.copy(b);
+            g.add(fist);
+            return g;
         }
 
         // 创建工具模型（手持武器）—— 按武器名称渲染出各不相同的形状，材质颜色取自 item.color
@@ -6525,7 +6652,8 @@
                     new THREE.ExtrudeGeometry(makeShieldShape(1.0), { depth: 0.08, bevelEnabled: false }),
                     bladeMat
                 );
-                panel.position.z = 0.005;
+                panel.position.z = -0.029;  // 木边框背面在 z=-0.03；面板背面紧跟其后，
+                                            // 避免面板正面比边框突出太多、从背面斜看露出绿边
                 group.add(panel);
                 // 铁质盾徽 + 金色徽记
                 const boss = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.08), ironMat);
@@ -6534,6 +6662,17 @@
                 const emblem = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.09, 0.09), new THREE.MeshLambertMaterial({ color: 0xffdd00 }));
                 emblem.position.set(0, 0.56, 0.1);
                 group.add(emblem);
+                // 盾牌内侧：木背中央的铁质护手（真实盾牌背面就有一颗供手握的护手/铆钉）
+                // 正面翻到朝前之后，第三人称看到的就是这一面，所以不能只是一块光木
+                // 注意 z 顺序：护手要在握把横梁的「内侧」(更靠 -Z)，否则从背面看横梁会把
+                // 护手切成两截
+                const backBoss = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, 0.045), ironMat);
+                backBoss.position.set(0, 0.5, -0.068);
+                group.add(backBoss);
+                // 握把横梁（横向，穿过护手背后，方便看出这是盾的内侧）
+                const gripBar = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.06, 0.04), woodMat);
+                gripBar.position.set(0, 0.5, -0.052);
+                group.add(gripBar);
             } else if (name.indexOf('火把') >= 0) {
                 // === 火把 === 木棍 + 双层火焰
                 const stick = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.5, 0.05), handleMat);
@@ -6547,124 +6686,154 @@
                 group.add(flameTop);
             } else if (name.indexOf('狙击') >= 0) {
                 // === 狙击枪 === 超长枪管 + 瞄准镜 + 枪托 + 两脚架（最长的枪）
-                const stock = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.12, 0.08), handleMat);
-                stock.position.set(-0.2, 0.3, 0);
+                // 长度沿本地 +Y：容器 rotation.x=-π/2 会把 +Y 转到世界 -Z（正前方）
+                // 本地 +Z = 世界向上（瞄准镜朝上），本地 -Z = 世界向下（弹匣/握把下垂）
+                const stock = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.18, 0.1), handleMat);
+                stock.position.set(0, 0.1, 0);
                 group.add(stock);
-                const body = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.12, 0.1), bladeMat);
-                body.position.set(-0.02, 0.3, 0);
-                group.add(body);
-                const barrel = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.05, 0.05), bladeMat);
-                barrel.position.set(0.25, 0.3, 0);
-                group.add(barrel);
-                const scope = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.06, 0.06), new THREE.MeshLambertMaterial({ color: 0x222222 }));
-                scope.position.set(-0.02, 0.4, 0);
-                group.add(scope);
-                const lens = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.04, 0.04), new THREE.MeshBasicMaterial({ color: 0x44ffcc }));
-                lens.position.set(0.07, 0.4, 0);
-                group.add(lens);
                 const grip = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.12, 0.06), handleMat);
-                grip.position.set(-0.08, 0.2, 0);
+                grip.position.set(0, 0.07, -0.06);
                 group.add(grip);
-                const legL = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.18, 0.02), handleMat);
-                legL.position.set(0.15, 0.15, 0.05);
+                const body = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.28, 0.13), bladeMat);
+                body.position.set(0, 0.34, 0);
+                group.add(body);
+                const barrel = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.46, 0.055), bladeMat);
+                barrel.position.set(0, 0.7, 0);
+                group.add(barrel);
+                const scope = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.16, 0.07), new THREE.MeshLambertMaterial({ color: 0x222222 }));
+                scope.position.set(0, 0.36, 0.09);
+                group.add(scope);
+                const lens = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 0.03), new THREE.MeshBasicMaterial({ color: 0x44ffcc }));
+                lens.position.set(0, 0.48, 0.09);
+                group.add(lens);
+                // 两脚架（撑在枪管下方、朝前伸出）
+                const legL = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.2, 0.02), handleMat);
+                legL.position.set(-0.05, 0.52, -0.03);
                 group.add(legL);
-                const legR = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.18, 0.02), handleMat);
-                legR.position.set(0.15, 0.15, -0.05);
+                const legR = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.2, 0.02), handleMat);
+                legR.position.set(0.05, 0.52, -0.03);
                 group.add(legR);
             } else if (name.indexOf('步枪') >= 0) {
-                // === 步枪 === 枪托 + 枪身 + 长枪管 + 弹匣（中等长度）
-                const stock = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.12, 0.08), handleMat);
-                stock.position.set(-0.15, 0.3, 0);
+                // === 步枪 === 枪托 + 枪身 + 长枪管 + 弹匣（中等长度，长度沿 +Y 朝前）
+                const stock = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.16, 0.1), handleMat);
+                stock.position.set(0, 0.09, 0);
                 group.add(stock);
-                const body = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.12, 0.1), bladeMat);
-                body.position.set(0.0, 0.3, 0);
-                group.add(body);
-                const barrel = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.06, 0.06), bladeMat);
-                barrel.position.set(0.25, 0.3, 0);
-                group.add(barrel);
-                const mag = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.15, 0.08), bladeMat);
-                mag.position.set(0.0, 0.2, 0);
-                group.add(mag);
                 const grip = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.12, 0.06), handleMat);
-                grip.position.set(-0.05, 0.2, 0);
+                grip.position.set(0, 0.06, -0.06);
                 group.add(grip);
-            } else if (name.indexOf('手枪') >= 0) {
-                // === 手枪 === 紧凑：握把 + 枪身 + 短枪管
-                const grip = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.18, 0.08), handleMat);
-                grip.position.set(0, 0.05, 0);
-                group.add(grip);
-                const body = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.1, 0.1), bladeMat);
-                body.position.set(0.05, 0.16, 0);
+                const mag = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.16, 0.08), bladeMat);
+                mag.position.set(0, 0.26, -0.08);   // 弹匣向下垂
+                group.add(mag);
+                const body = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.26, 0.12), bladeMat);
+                body.position.set(0, 0.32, 0);
                 group.add(body);
-                const barrel = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.05, 0.05), bladeMat);
-                barrel.position.set(0.18, 0.16, 0);
+                const barrel = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.34, 0.06), bladeMat);
+                barrel.position.set(0, 0.6, 0);
+                group.add(barrel);
+            } else if (name.indexOf('手枪') >= 0) {
+                // === 手枪 === 紧凑：握把 + 枪身 + 短枪管（长度沿 +Y 朝前）
+                const grip = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.18, 0.09), handleMat);
+                grip.position.set(0, 0.04, 0);
+                group.add(grip);
+                const body = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.2, 0.12), bladeMat);
+                body.position.set(0, 0.24, 0);
+                group.add(body);
+                const barrel = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.13, 0.05), bladeMat);
+                barrel.position.set(0, 0.41, 0);
                 group.add(barrel);
                 const trigger = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.06, 0.04), handleMat);
-                trigger.position.set(0.0, 0.1, 0);
+                trigger.position.set(0, 0.14, -0.03);
                 group.add(trigger);
+            } else if (name.indexOf('金箍棒') >= 0) {
+                // === 金箍棒 === 金色长棍 + 两端箍环（定海神针，超长武器；长度沿 +Y 朝前）
+                // 注意：此前没有这个分支，选中金箍棒时 group 是空的，所以手里什么都看不到
+                const goldMat = new THREE.MeshLambertMaterial({ color: 0xffcc33 });
+                const ringMat = new THREE.MeshLambertMaterial({ color: 0xcc8800 });
+                const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.1, 12), goldMat);
+                staff.position.y = 0.55;
+                group.add(staff);
+                // 两端粗箍环
+                const ringBot = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.09, 14), ringMat);
+                ringBot.position.y = 0.2;
+                group.add(ringBot);
+                const ringTop = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.09, 14), ringMat);
+                ringTop.position.y = 0.9;
+                group.add(ringTop);
+                // 两端圆头
+                const capBot = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.05, 0.07, 12), ringMat);
+                capBot.position.y = -0.01;
+                group.add(capBot);
+                const capTop = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.035, 0.07, 12), ringMat);
+                capTop.position.y = 1.11;
+                group.add(capTop);
             } else if (name.indexOf('坦克') >= 0) {
                 // === 坦克 === 缩小版军事坦克模型（手持时显示，右键召唤真坦克）
+                // 坦克本体沿本地 -Z 朝前（炮口在 -Z），先用 rotation.x=+π/2 把 -Z 转到本地 +Y，
+                // 再由容器的 -π/2 转到世界 -Z（正前方），同时车体保持正立
                 const hullMat = new THREE.MeshLambertMaterial({ color: 0x3a4a2a });
                 const hullDark = new THREE.MeshLambertMaterial({ color: 0x2a3a1a });
                 const metalMat = new THREE.MeshLambertMaterial({ color: 0x555555 });
                 const barrelMat = new THREE.MeshLambertMaterial({ color: 0x444444 });
                 const trackMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
+                const tank = new THREE.Group();
+                tank.rotation.x = Math.PI / 2;
+                group.add(tank);
                 // 车身
                 const body = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.08, 0.35), hullMat);
                 body.position.set(0, 0.32, 0);
-                group.add(body);
+                tank.add(body);
                 // 倾斜前装甲
                 const frontPlate = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.04, 0.12), hullDark);
                 frontPlate.position.set(0, 0.38, -0.15);
                 frontPlate.rotation.x = -0.3;
-                group.add(frontPlate);
+                tank.add(frontPlate);
                 // 炮塔
                 const turret = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.08, 0.18), hullMat);
                 turret.position.set(0, 0.42, 0);
-                group.add(turret);
+                tank.add(turret);
                 // 炮塔顶
                 const turretTop = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.03, 0.12), hullDark);
                 turretTop.position.set(0, 0.47, 0);
-                group.add(turretTop);
+                tank.add(turretTop);
                 // 炮管
                 const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.02, 0.35, 6), barrelMat);
                 barrel.rotation.x = Math.PI / 2;
                 barrel.position.set(0, 0.42, -0.22);
-                group.add(barrel);
+                tank.add(barrel);
                 // 炮口制退器
                 const muzzleBrake = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.06), metalMat);
                 muzzleBrake.position.set(0, 0.42, -0.37);
-                group.add(muzzleBrake);
+                tank.add(muzzleBrake);
                 // 履带
                 const trackL = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.08, 0.36), trackMat);
                 trackL.position.set(-0.16, 0.28, 0);
-                group.add(trackL);
+                tank.add(trackL);
                 const trackR = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.08, 0.36), trackMat);
                 trackR.position.set(0.16, 0.28, 0);
-                group.add(trackR);
+                tank.add(trackR);
                 // 履带轮（每侧3个）
                 for (const wz of [-0.12, 0, 0.12]) {
                     const wheelL = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.05, 6), new THREE.MeshLambertMaterial({ color: 0x1a1a1a }));
                     wheelL.rotation.z = Math.PI / 2;
                     wheelL.position.set(-0.16, 0.26, wz);
-                    group.add(wheelL);
+                    tank.add(wheelL);
                     const wheelR = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.05, 6), new THREE.MeshLambertMaterial({ color: 0x1a1a1a }));
                     wheelR.rotation.z = Math.PI / 2;
                     wheelR.position.set(0.16, 0.26, wz);
-                    group.add(wheelR);
+                    tank.add(wheelR);
                 }
                 // 排烟口
                 const smokestack = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.06, 4), metalMat);
                 smokestack.position.set(0.06, 0.40, 0.12);
-                group.add(smokestack);
+                tank.add(smokestack);
                 // 天线
                 const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.003, 0.15, 3), metalMat);
                 antenna.position.set(-0.10, 0.48, 0.10);
-                group.add(antenna);
+                tank.add(antenna);
                 // 把手（手持用）
                 const handle = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.25, 0.04), handleMat);
                 handle.position.set(0, 0.1, 0);
-                group.add(handle);
+                tank.add(handle);
             }
             return group;
         }
@@ -6781,8 +6950,8 @@
                 case 'Digit0': selectSlot(9); break;
                 case 'KeyE':
                     if (event.repeat) return;
-                    // 走近爷爷/奶奶/泽宇按E → 开始课文朗读
-                    if (nearGuardian || nearZeyu) {
+                    // 走近保护神/兔子按E → 开始课文朗读
+                    if (nearGuardian || nearRabbit) {
                         startGuardianReading();
                         break;
                     }
@@ -6889,11 +7058,11 @@
             }
         }
 
-        // 磕头恢复生命和饥饿值（需在奶奶/爷爷附近）
+        // 磕头恢复生命和饥饿值（需在保护神附近）
         let kowtowing = false;
         function kowtow() {
             if (!nearGuardian) {
-                showStatus('❌ 请走到奶奶或爷爷面前才能磕头');
+                showStatus('❌ 请走到烈焰人或幻翼面前才能磕头');
                 return;
             }
             if (kowtowing) return;
@@ -7408,7 +7577,7 @@
                         // 更新库存显示
                         updateInventoryDisplay();
                         
-                        // 检查采集里程碑（50块解锁答题、100块解锁矿石、200块解锁金箍棒）
+                        // 检查采集里程碑（100块解锁矿石、200块解锁答题与金箍棒）
                         checkCollectionMilestones();
                         
                         // 🎮 金币奖励 + 挖矿特效 + 每日任务
@@ -7430,7 +7599,7 @@
                         // 采集方块时随机朗读教材内容
                         maybeReadOnCollect();
                         
-                        // 采集方块时随机触发迷你游戏挑战（需累计采集 ≥ 50 块材料）
+                        // 采集方块时随机触发迷你游戏挑战（需累计采集 ≥ 200 块材料）
                         maybeStartMiniGame();
                     } else {
                         showStatus('❌ 基岩无法采集！');
@@ -7719,7 +7888,7 @@
                 if (pos._stuckTimer) pos._stuckTimer = 0;
             }
             
-            // 保护神碰撞检测（奶奶/爷爷不能被穿过）
+            // 保护神碰撞检测（不能被穿过）
             if (!flying && playerModel) {
                 const pPos = playerModel.position;
                 for (const mob of mobs) {
@@ -8331,12 +8500,12 @@
             if (dayPhase < 0.03) {
                 const t = dayPhase / 0.03;
                 skyColor = new THREE.Color().lerpColors(new THREE.Color(0x2a2a4a), new THREE.Color(0xff9966), t);
-                lightColor = new THREE.Color(0xffaa66); lightIntensity = 0.3; ambIntensity = 0.25;
+                lightColor = new THREE.Color(0xffaa66); lightIntensity = 0.45; ambIntensity = 0.50;
             } else if (dayPhase < 0.1) {
                 const t = (dayPhase - 0.03) / 0.07;
                 skyColor = new THREE.Color().lerpColors(new THREE.Color(0xff9966), new THREE.Color(0x87ceeb), t);
                 lightColor = new THREE.Color().lerpColors(new THREE.Color(0xff8844), new THREE.Color(0xfff5e0), t);
-                lightIntensity = 0.3 + t * 0.55; ambIntensity = 0.25 + t * 0.47;
+                lightIntensity = 0.45 + t * 0.40; ambIntensity = 0.50 + t * 0.22;
             } else if (dayPhase < 0.4) {
                 skyColor = new THREE.Color(0x87ceeb);
                 lightColor = new THREE.Color(0xfff5e0); lightIntensity = 0.85; ambIntensity = 0.72;
@@ -8344,19 +8513,22 @@
                 const t = (dayPhase - 0.4) / 0.1;
                 skyColor = new THREE.Color().lerpColors(new THREE.Color(0x87ceeb), new THREE.Color(0xff6644), t);
                 lightColor = new THREE.Color().lerpColors(new THREE.Color(0xfff5e0), new THREE.Color(0xff6622), t);
-                lightIntensity = 0.85 - t * 0.55; ambIntensity = 0.72 - t * 0.47;
+                lightIntensity = 0.85 - t * 0.33; ambIntensity = 0.72 - t * 0.02;
             } else if (dayPhase < 0.55) {
                 const t = (dayPhase - 0.5) / 0.05;
                 skyColor = new THREE.Color().lerpColors(new THREE.Color(0xff6644), new THREE.Color(0x0a0a2a), t);
-                lightColor = new THREE.Color(0xff4400); lightIntensity = 0.3 - t * 0.22; ambIntensity = 0.25 - t * 0.07;
+                lightColor = new THREE.Color(0xff4400); lightIntensity = 0.52 - t * 0.14; ambIntensity = 0.70 - t * 0.02;
             } else if (dayPhase < 0.9) {
                 skyColor = new THREE.Color(0x0a0a2a);
-                lightColor = new THREE.Color(0x4466aa); lightIntensity = 0.08; ambIntensity = 0.18;
+                // 夜晚保留深蓝夜空氛围，但把月光/环境光提到「能看清人和方块」的水平。
+                // 旧值 0.22/0.42 叠加 0x5577bb/0x2a2a3a 的半球光颜色后，
+                // 地面实测亮度只有约 0.07，第一人称夜里几乎全黑、连脚下的方块都看不到。
+                lightColor = new THREE.Color(0x6688cc); lightIntensity = 0.38; ambIntensity = 0.68;
             } else {
                 const t = (dayPhase - 0.9) / 0.1;
                 skyColor = new THREE.Color().lerpColors(new THREE.Color(0x0a0a2a), new THREE.Color(0xff9966), t);
-                lightColor = new THREE.Color().lerpColors(new THREE.Color(0x4466aa), new THREE.Color(0xffaa66), t);
-                lightIntensity = 0.08 + t * 0.22; ambIntensity = 0.18 + t * 0.07;
+                lightColor = new THREE.Color().lerpColors(new THREE.Color(0x6688cc), new THREE.Color(0xffaa66), t);
+                lightIntensity = 0.38 + t * 0.47; ambIntensity = 0.68 + t * 0.04;
             }
             // 天气影响：阴天/雨天天空变暗
             if (currentWeather === 'cloudy' || currentWeather === 'rain' || currentWeather === 'typhoon') {
@@ -8370,7 +8542,9 @@
             if (_hemiLight) {
                 _hemiLight.intensity = ambIntensity;
                 if (isDaytime()) { _hemiLight.color.setHex(0x87ceeb); _hemiLight.groundColor.setHex(0x6b4423); }
-                else { _hemiLight.color.setHex(0x2a3a5a); _hemiLight.groundColor.setHex(0x1a1a2a); }
+                // 夜晚半球光颜色也要提亮：颜色本身太暗会抵消 ambIntensity（最终亮度 = 颜色 × 强度）。
+                // 旧 0x5577bb/0x2a2a3a × 0.42 让地面只有约 0.07；改后 × 0.68，地面约 0.20。
+                else { _hemiLight.color.setHex(0x7799dd); _hemiLight.groundColor.setHex(0x4a4a5a); }
             }
 
             // 太阳和月亮位置更新
@@ -8513,7 +8687,7 @@
                 }
             }
 
-            // 检测附近保护神（奶奶/爷爷）
+            // 检测附近保护神
             if (gameActive && playerModel) {
                 const pos = getPlayerPos();
                 nearGuardian = false;
@@ -8528,22 +8702,22 @@
                     }
                 }
 
-                // 检测附近泽宇（兔子）
-                nearZeyu = false;
+                // 检测附近兔子
+                nearRabbit = false;
                 for (const mob of mobs) {
                     if (!mob.alive || !mob.mesh.visible) continue;
                     if (mob.type && mob.type.textureKey === 'RABBIT') {
                         const dx = pos.x - mob.mesh.position.x;
                         const dz = pos.z - mob.mesh.position.z;
                         if (Math.sqrt(dx * dx + dz * dz) < 8.0) {
-                            nearZeyu = true;
+                            nearRabbit = true;
                             break;
                         }
                     }
                 }
 
-                // 自动朗读：靠近爷爷/奶奶/泽宇时自动朗读课文
-                if (nearGuardian || nearZeyu) {
+                // 自动朗读：靠近保护神/兔子时自动朗读课文
+                if (nearGuardian || nearRabbit) {
                     guardianReadTimer += delta;
                     if (guardianReadTimer >= 8.0) {  // 每8秒自动朗读一次
                         guardianReadTimer = 0;
@@ -8634,7 +8808,7 @@
             if (!gameActive) statusText = '未开始（请点击开始游戏）';
             else if (flying) statusText = sprintHeld ? '☁️ 筋斗云加速模式 (Shift加速 Q↓ Space↑ F关闭)' : '✈️ 飞行模式 (Space↑ Q↓ Shift加速 F关闭)';
             else if (fallbackMode) statusText = '拖拽模式（按住鼠标拖动转视角）';
-            else if (nearGuardian || nearZeyu) statusText = '📖 自动朗读中... | 按 C 磕头恢复';
+            else if (nearGuardian || nearRabbit) statusText = '📖 自动朗读中... | 按 C 磕头恢复';
             else if (controls.isLocked) statusText = '鼠标锁定模式';
             else statusText = '游戏运行中';
             if (statusEl.textContent !== statusText) statusEl.textContent = statusText;
@@ -8936,9 +9110,38 @@
 
         // === 游戏副本系统 (深圳市小学二年级上学期教材) ===
         // 副本空间参数（独立于主世界，放置在远端避免重叠）
-        const DUNGEON_ORIGIN_X = 1000;
-        const DUNGEON_ORIGIN_Z = 1000;
+        // 三个副本各占一个独立房间，沿 X 轴排开、互不重叠：
+        //   语文 (1000,1000) / 数学 (1400,1000) / 英语 (1800,1000)
+        const DUNGEON_ORIGINS = {
+            chinese: { x: 1000, z: 1000 },
+            math:    { x: 1400, z: 1000 },
+            english: { x: 1800, z: 1000 },
+        };
+        // 当前副本房间的中心：进入副本时按副本类型赋值。
+        // 主循环里的边界/采集判断都读这两个变量，所以换副本只需改这里
+        let DUNGEON_ORIGIN_X = 1000;
+        let DUNGEON_ORIGIN_Z = 1000;
         const DUNGEON_HALF = 15; // 30x30 副本地板的一半
+        // 副本宝箱奖励：副本类型 → 各层奖励。items 的键必须是 inventory 的合法字段，
+        // 挖掘时按 inventory[itemKey] += itemCount 累加（见采集判定处）。
+        // 缺了这一份数据，spawnDungeonChest 会抛 ReferenceError、整个 enterDungeon 中断
+        const DUNGEON_CHEST_REWARDS = {
+            chinese: [
+                { name: '语文宝箱·第1层', items: { planks: 6, sticks: 4 } },
+                { name: '语文宝箱·第2层', items: { wood: 8, coal: 3 } },
+                { name: '语文宝箱·BOSS层', items: { iron: 3, torch: 4 } },
+            ],
+            math: [
+                { name: '数学宝箱·第1层', items: { cobble: 6, sticks: 4 } },
+                { name: '数学宝箱·第2层', items: { stone: 8, coal: 3 } },
+                { name: '数学宝箱·BOSS层', items: { iron: 3, torch: 4 } },
+            ],
+            english: [
+                { name: '英语宝箱·第1层', items: { wood: 6, sticks: 4 } },
+                { name: '英语宝箱·第2层', items: { seeds: 4, wheat: 4 } },
+                { name: '英语宝箱·BOSS层', items: { iron: 3, torch: 4 } },
+            ],
+        };
 
         // 副本怪物类型
         const DUNGEON_MOBS = {
@@ -9725,6 +9928,10 @@
             dungeonState.active = true;
             dungeonState.completed = false;
             dungeonState.currentDungeon = dungeonType;
+            // 切到该副本自己的房间，主循环里的边界判断会跟着读新的中心坐标
+            const origin = DUNGEON_ORIGINS[dungeonType] || DUNGEON_ORIGINS.chinese;
+            DUNGEON_ORIGIN_X = origin.x;
+            DUNGEON_ORIGIN_Z = origin.z;
             dungeonState.currentFloor = 0;
             dungeonState.questionsAnswered = 0;
             dungeonState.answered = false;
@@ -10761,7 +10968,7 @@
         };
 
         // === 教材课文朗读系统 ===
-        // 爷爷→语文 / 奶奶→英语 / 泽宇→数学，轮流朗读
+        // 幻翼→语文 / 烈焰人→英语 / 兔子→数学，轮流朗读
         const TEXTBOOK_PASSAGES = {
             '语文': [
                 { title: '小蝌蚪找妈妈（片段）', text: '池塘里有一群小蝌蚪，大大的脑袋，黑灰色的身子，甩着长长的尾巴，快活地游来游去。小蝌蚪游哇游，过了几天，长出了两条后腿。他们看见鲤鱼妈妈在教小鲤鱼捕食，就迎上去，问：鲤鱼阿姨，我们的妈妈在哪里？鲤鱼妈妈说：你们的妈妈四条腿，宽嘴巴。你们到那边去找吧！' },
@@ -10828,9 +11035,9 @@
 
         // 朗读角色与学科对应
         const READING_CHARACTERS = [
-            { name: '爷爷', key: 'GRANDPA', subject: '语文', icon: '👴', voiceRate: 0.85, voicePitch: 0.9 },
-            { name: '奶奶', key: 'GRANDMA', subject: '英语', icon: '👵', voiceRate: 0.8, voicePitch: 1.2 },
-            { name: '泽宇', key: 'RABBIT', subject: '数学', icon: '🐰', voiceRate: 0.9, voicePitch: 1.3 }
+            { name: '幻翼', key: 'GRANDPA', subject: '语文', icon: '👴', voiceRate: 0.85, voicePitch: 0.9 },
+            { name: '烈焰人', key: 'GRANDMA', subject: '英语', icon: '👵', voiceRate: 0.8, voicePitch: 1.2 },
+            { name: '兔子', key: 'RABBIT', subject: '数学', icon: '🐰', voiceRate: 0.9, voicePitch: 1.3 }
         ];
 
         let currentReadingIndex = 0;  // 当前轮到谁读
@@ -10845,7 +11052,7 @@
         function startGuardianReading() {
             if (!gameActive) return;
             
-            // 轮转角色（爷爷→奶奶→泽宇→爷爷→...）
+            // 轮转角色（幻翼→烈焰人→兔子→幻翼→...）
             const char = READING_CHARACTERS[currentReadingIndex % READING_CHARACTERS.length];
             currentReadingIndex++;
             const passages = TEXTBOOK_PASSAGES[char.subject];
@@ -10866,7 +11073,7 @@
             const typeName = char.key === 'RABBIT' ? 'RABBIT' : char.key;
             for (const mob of mobs) {
                 if (!mob.alive || !mob.mesh.visible) continue;
-                const mobName = (typeName === 'GRANDPA' ? '爷爷' : typeName === 'GRANDMA' ? '奶奶' : '泽宇');
+                const mobName = (typeName === 'GRANDPA' ? '幻翼' : typeName === 'GRANDMA' ? '烈焰人' : '兔子');
                 if ((mob.type && mob.type.name === mobName) || (mob.guardian && mob.type && mob.type.name === mobName)) {
                     const dx = playerPos.x - mob.mesh.position.x;
                     const dz = playerPos.z - mob.mesh.position.z;
@@ -11064,7 +11271,7 @@
         }
         
         function doCollectRead() {
-            // 随机选择一个角色（爷爷/奶奶/泽宇）
+            // 随机选择一个角色（幻翼/烈焰人/兔子）
             const char = READING_CHARACTERS[Math.floor(Math.random() * READING_CHARACTERS.length)];
             const passages = TEXTBOOK_PASSAGES[char.subject];
             if (!passages || passages.length === 0) return;
@@ -11088,23 +11295,19 @@
             speakText(fullText, char.voiceRate);
         }
         
-        // === 采集里程碑系统：50块解锁答题、100块解锁矿石、200块解锁金箍棒 ===
+        // === 采集里程碑系统：100块解锁矿石、200块解锁答题挑战与金箍棒 ===
         function checkCollectionMilestones() {
-            // 50块：解锁答题挑战
-            if (totalCollected >= 50 && !_collectedMilestones.has(50)) {
-                _collectedMilestones.add(50);
-                showStatus('🎉 累计采集50块材料！已解锁答题挑战（采集时可能触发）');
-                speakText('累计采集50块材料！已解锁答题挑战', 1.0);
-            }
             // 100块：解锁铁矿/煤矿
             if (totalCollected >= 100 && !_collectedMilestones.has(100)) {
                 _collectedMilestones.add(100);
                 showStatus('⛏️ 累计采集100块材料！铁矿和煤矿已解锁！');
                 speakText('累计采集100块材料！铁矿和煤矿已解锁', 1.0);
             }
-            // 200块：解锁金箍棒特殊武器
+            // 200块：解锁答题挑战 + 金箍棒特殊武器
             if (totalCollected >= 200 && !_collectedMilestones.has(200)) {
                 _collectedMilestones.add(200);
+                showStatus('🎉 累计采集200块材料！已解锁答题挑战（采集时可能触发）');
+                speakText('累计采集200块材料！已解锁答题挑战', 1.0);
                 if (!inventory.ruyiJbg) {
                     inventory.ruyiJbg = true;
                     // 把金箍棒加入快捷栏（如果尚未加入）
@@ -11596,12 +11799,13 @@
         
         let miniGameActive = false;
         let miniGameLastTime = 0;
+        let miniGameWasLocked = false;   // 答题打开前是否处于指针锁定（决定关闭后要不要重新锁定）
         
         function maybeStartMiniGame() {
             const now = Date.now();
             if (miniGameActive) return;
-            // 需累计采集至少50块材料才会触发答题挑战
-            if (totalCollected < 50) return;
+            // 需累计采集至少200块材料才会触发答题挑战
+            if (totalCollected < 200) return;
             if (now - miniGameLastTime < 10000) return; // 10秒冷却
             if (Math.random() > 0.15) return; // 15%几率
             
@@ -11654,7 +11858,17 @@
             
             overlay.appendChild(panel);
             document.body.appendChild(overlay);
-            
+
+            // 🖱️ 答题要鼠标点选：必须释放指针锁定，否则光标被浏览器隐藏、选项按钮点不了
+            // （锁定期间 click 只会派发到被锁定的 canvas，永远落不到面板上的按钮）
+            // 关闭时由「继续游戏」按钮——一个真实用户手势——负责重新锁定
+            miniGameWasLocked = !!(controls && controls.isLocked);
+            if (controls && miniGameWasLocked && !fallbackMode) {
+                controls.unlock();
+                renderer.domElement.style.cursor = 'auto';
+            }
+            gameActive = false;   // 答题期间暂停世界，与角色/属性面板的约定一致
+
             // 朗读题目
             const char = READING_CHARACTERS.find(c => c.subject === subjectName);
             if (char) {
@@ -11690,12 +11904,23 @@
                 speakText(`答错了，正确答案是${correct}`, 0.9);
             }
             
-            // 3秒后关闭
-            setTimeout(() => {
+            // 「继续游戏」按钮：重新锁定鼠标必须是用户手势，setTimeout 里调 lock() 会被浏览器拒绝。
+            // 原来 3 秒自动关闭，既让玩家干等，也换不回鼠标锁定。
+            const closeBtn = document.createElement('button');
+            closeBtn.textContent = '继续游戏 ▶';
+            closeBtn.style.cssText = 'margin-top:14px;padding:12px 34px;background:#ffd700;color:#1a1a2e;border:none;border-radius:8px;cursor:pointer;font-size:16px;font-weight:bold;transition:all 0.2s;';
+            closeBtn.onmouseenter = () => { closeBtn.style.background = '#ffe14a'; closeBtn.style.transform = 'scale(1.05)'; };
+            closeBtn.onmouseleave = () => { closeBtn.style.background = '#ffd700'; closeBtn.style.transform = 'scale(1)'; };
+            closeBtn.onclick = () => {
                 document.getElementById('mini-game-overlay')?.remove();
                 miniGameActive = false;
                 playerInvulnerable = false;
-            }, 3000);
+                gameActive = true;
+                // 答题前是锁定状态才需要重新锁定；兜底拖拽模式下本来就没锁
+                if (miniGameWasLocked && !fallbackMode) controls.lock();
+                miniGameWasLocked = false;
+            };
+            panel.appendChild(closeBtn);
         }
         const LEVEL_TIERS = [
             { tier: 'bronze', name: '青铜宝箱', emoji: '🟫', blockKey: 'CHEST_B', color: '#e0a06a', min: 40,
@@ -11779,13 +12004,13 @@
                 nameLabel.style.color = available ? '#ddd' : '#666';
                 nameLabel.innerText = available ? item.name : '🔒' + item.name;
                 slot.appendChild(nameLabel);
-                // 显示数量
-                const count = getItemCount(item);
-                if (count > 0) {
-                    const countLabel = document.createElement('span');
-                    countLabel.className = 'slot-count';
-                    countLabel.innerText = '×' + count;
-                    slot.appendChild(countLabel);
+                // 显示数量（统一规则见 getSlotCountLabel：可用物品都有徽章）
+                const countLabel = getSlotCountLabel(item);
+                if (countLabel) {
+                    const countLabelEl = document.createElement('span');
+                    countLabelEl.className = 'slot-count';
+                    countLabelEl.innerText = countLabel;
+                    slot.appendChild(countLabelEl);
                 }
                 slot.appendChild(keyLabel);
                 slot.appendChild(icon);

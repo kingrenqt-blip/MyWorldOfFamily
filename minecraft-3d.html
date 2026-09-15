@@ -145,8 +145,8 @@
                 </div>
                 <div class="mob-card" data-type="GRANDMA">
                     <div class="mob-header" style="background:#ffcc66;">
-                        <span class="mob-name">🙏 奶奶</span>
-                        <span class="mob-pinyin">nǎi nai</span>
+                        <span class="mob-name">🙏 烈焰人</span>
+                        <span class="mob-pinyin">liè yàn rén</span>
                     </div>
                     <div class="mob-body">
                         <p>📊 <ruby>血量<rt>Xuè Liàng</rt></ruby>: 50 | ⚔️ <ruby>伤害<rt>Shāng Hài</rt></ruby>: 0</p>
@@ -157,8 +157,8 @@
                 </div>
                 <div class="mob-card" data-type="GRANDPA">
                     <div class="mob-header" style="background:#88aaff;">
-                        <span class="mob-name">🛡️ 爷爷</span>
-                        <span class="mob-pinyin">yé ye</span>
+                        <span class="mob-name">🛡️ 幻翼</span>
+                        <span class="mob-pinyin">huàn yì</span>
                     </div>
                     <div class="mob-body">
                         <p>📊 <ruby>血量<rt>Xuè Liàng</rt></ruby>: 50 | ⚔️ <ruby>伤害<rt>Shāng Hài</rt></ruby>: 0</p>
@@ -319,11 +319,13 @@
 
         <!-- 进游戏时的操作提示 -->
         <div id="in-game-prompt"></div>
-        <!-- 物品快捷栏 -->
-        <div id="hotbar-container"></div>
 
-        <!-- 功能按钮面板 -->
-        <div id="btn-panel">
+        <!-- 底部 HUD：按钮面板在上、快捷栏在下，纵向堆叠。
+             快捷栏物品数变化会导致行数变化（2~3 行），flex 会自动把按钮顶上去，
+             避免存档等按钮被快捷栏遮挡 -->
+        <div id="hud-bottom">
+            <!-- 功能按钮面板 -->
+            <div id="btn-panel">
             <button class="game-btn" id="btn-save-panel" title="<ruby>存档管理<rt>Cún Dàng Guǎn Lǐ</rt></ruby>">
                 <span class="btn-icon">💾</span>
                 <span class="btn-text"><ruby>存档<rt>Cún Dàng</rt></ruby></span>
@@ -352,6 +354,10 @@
                 <span class="btn-icon">🔊</span>
                 <span class="btn-text"><ruby>语音<rt>Yǔ Yīn</rt></ruby></span>
             </button>
+            </div>
+
+            <!-- 物品快捷栏 -->
+            <div id="hotbar-container"></div>
         </div>
 
         <!-- 生命 shēng mìng / 饥饿值 jī è zhí -->
@@ -563,7 +569,7 @@
                 </div>
                 
                 <p style="color:#ff8888;font-size:13px;">⚠️ 小心！夜晚 (Yè Wǎn) 苦力怕 (Kǔ Lì Pà) 僵尸 (Jiāng Shī) 骷髅 (Kū Lóu) 蜘蛛 (Zhī Zhū) 末影人 (Mò Yǐng Rén) 会攻击你</p>
-                <p style="color:#55ff55;font-size:13px;">💚 找到奶奶 (Nǎi Nai) 或爷爷 (Yé Ye)，按 C 磕头可恢复生命和饥饿值 (Kē Tóu Kě Huī Fù)</p>
+                <p style="color:#55ff55;font-size:13px;">💚 找到烈焰人 (Liè Yàn Rén) 或幻翼 (Huàn Yì)，按 C 磕头可恢复生命和饥饿值 (Kē Tóu Kě Huī Fù)</p>
                 <p style="color:#88aaff;font-size:13px;">📁 点击「文件」按钮可保存存档到本地文件 (Diǎn Jī「Wén Jiàn」Bǎo Cún Cún Dàng)</p>
                 <p style="font-size:12px;color:#888;margin-top:8px;">若浏览器不支持鼠标锁定，开始后将自动进入「按住鼠标拖动看视角」模式</p>
                 
@@ -624,7 +630,7 @@
         <div id="reading-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:999;overflow-y:auto;padding:20px;">
             <div style="max-width:700px;margin:0 auto;">
                 <h2 style="color:#ffd700;text-align:center;margin-bottom:10px;">📖 <ruby>课文朗读<rt>Kè Wén Lǎng Dú</rt></ruby></h2>
-                <div style="text-align:center;color:#aaa;margin-bottom:15px;">👴<ruby>爷爷→语文<rt>Yé Ye → Yǔ Wén</rt></ruby> | 👵<ruby>奶奶→英语<rt>Nǎi Nai → Yīng Yǔ</rt></ruby> | 🐰<ruby>泽宇→数学<rt>Zé Yǔ → Shù Xué</rt></ruby></div>
+                <div style="text-align:center;color:#aaa;margin-bottom:15px;">🔥<ruby>烈焰人→语文<rt>Liè Yàn Rén → Yǔ Wén</rt></ruby> | 🌀<ruby>幻翼→英语<rt>Huàn Yì → Yīng Yǔ</rt></ruby> | 🐰<ruby>兔子→数学<rt>Tù Zi → Shù Xué</rt></ruby></div>
                 <div id="reading-tabs" style="display:flex;gap:8px;justify-content:center;margin-bottom:15px;"></div>
                 <div id="reading-progress"></div>
                 <div id="reading-content" style="background:#1a1a2e;border-radius:8px;padding:15px;color:#ddd;font-size:14px;line-height:1.8;"></div>
@@ -633,7 +639,7 @@
                     <button id="reading-speak" style="padding:6px 16px;background:#3a3;color:#fff;border:none;border-radius:4px;cursor:pointer;">🔊 <ruby>朗读<rt>Lǎng Dú</rt></ruby></button>
                     <button id="reading-next" style="padding:6px 16px;background:#2a2a4e;color:#fff;border:none;border-radius:4px;cursor:pointer;">⏭ <ruby>下一篇<rt>Xià Yī Piān</rt></ruby></button>
                 </div>
-                <div style="text-align:center;margin-top:10px;color:#888;font-size:12px;">🎮 在游戏中走到<ruby>爷爷/奶奶/泽宇<rt>Yé Ye / Nǎi Nai / Zé Yǔ</rt></ruby>身边按 <b>E</b> 键即可听朗读</div>
+                <div style="text-align:center;margin-top:10px;color:#888;font-size:12px;">🎮 在游戏中走到<ruby>烈焰人/幻翼/兔子<rt>Liè Yàn Rén / Huàn Yì / Tù Zi</rt></ruby>身边按 <b>E</b> 键即可听朗读</div>
                 <button id="reading-close" style="display:block;margin:15px auto 0;padding:8px 30px;background:#c33;color:#fff;border:none;border-radius:4px;cursor:pointer;">✕ <ruby>关闭<rt>Guān Bì</rt></ruby></button>
             </div>
         </div>
